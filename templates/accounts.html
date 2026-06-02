@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <title>الحسابات - وسيط</title>
+    <style>
+        body {
+            background: #0f0f0f;
+            color: white;
+            font-family: Arial;
+            padding: 50px;
+        }
+        h1 { color: #00ff88; text-align: center; }
+        .card {
+            background: #1a1a1a;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 15px auto;
+            max-width: 500px;
+            border: 1px solid #00ff88;
+        }
+        .price { color: #00ff88; font-size: 24px; }
+        .btn {
+            background: #00ff88;
+            color: black;
+            padding: 10px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎮 الحسابات المعروضة</h1>
+    {% for account in accounts %}
+    <div class="card">
+        <h2>{{ account.game }}</h2>
+        <p>{{ account.description }}</p>
+        <p class="price">{{ account.price }} ريال</p>
+        <p>البائع: {{ account.seller }}</p>
+        <a href="#" class="btn">شراء</a>
+    </div>
+    {% else %}
+    <p style="text-align:center">لا يوجد حسابات معروضة حالياً</p>
+    {% endfor %}
+</body>
+</html>
