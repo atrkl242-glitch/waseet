@@ -32,7 +32,7 @@ def register():
         user = User(name=name, email=email, password=password)
         db.session.add(user)
         db.session.commit()
-        session['user'] = name
+        session['user'] = user.name
         return redirect('/')
     return render_template('register.html')
 
