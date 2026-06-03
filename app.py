@@ -36,7 +36,6 @@ class Account(db.Model):
     time = db.Column(db.DateTime, default=db.func.now())
 
 with app.app_context():
-    db.drop_all()
     db.create_all()
 
 @app.route('/')
