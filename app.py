@@ -28,14 +28,13 @@ class Account(db.Model):
     price = db.Column(db.Float)
     seller = db.Column(db.String(100))
     
-    class Message(db.Model):
-     id = db.Column(db.Integer, primary_key=True)
-     
-     account_id = db.Column(db.Integer)
-    sender = db.Column(db.String(100))
-    receiver = db.Column(db.String(100))
-    content = db.Column(db.String(500))
-    time = db.Column(db.DateTime, default=db.func.now())
+class Message(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    account_id = db.Column(db.Integer)
+sender = db.Column(db.String(100))
+receiver = db.Column(db.String(100))
+content = db.Column(db.String(500))
+time = db.Column(db.DateTime, default=db.func.now())
 
 with app.app_context():
     db.create_all()
