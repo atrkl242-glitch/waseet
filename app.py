@@ -4,15 +4,9 @@ from flask_bcrypt import Bcrypt
 from flask_sqlalchemy import SQLAlchemy
 
 app = Flask(__name__)
-app.secret_key = os.environ.get('SECRET_KEY', 'waseet123')
-bcrypt = Bcrypt(app)
-
-app.config['SESSION_COOKIE_SECURE'] = False
-app.config['SESSION_COOKIE_HTTPONLY'] = True
-app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
-app.config['PERMANENT_SESSION_LIFETIME'] = 86400
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///waseet.db')
-
+app.secret_key = 'waseet123'
+bcrypt = Bcrypt(app)
 db = SQLAlchemy(app)
 
 class User(db.Model):
@@ -31,11 +25,12 @@ class Account(db.Model):
 class Message(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     account_id = db.Column(db.Integer)
-sender = db.Column(db.String(100))
-receiver = db.Column(db.String(100))
-content = db.Column(db.String(500))
-time = db.Column(db.DateTime, default=db.func.now())
+    sender = db.Column(db.String(100))
+    receiver = db.Column(db.String(100))
+    content = db.Column(db.String(500))
+    time = db.Column(db.DateTime, default=db.func.now())
 
+# هذا الجزء يقوم بمسح وإعادة إنشاء الجداول لضمان التحديث
 with app.app_context():
     db.drop_all()
     db.create_all()
@@ -68,7 +63,7 @@ def login():
         if user and bcrypt.check_password_hash(user.password, password):
             session.permanent = True
             session['user'] = user.name
-            return redirect('/')
+            return redirect('/accounts')
         return render_template('login.html', error='بيانات خاطئة')
     return render_template('login.html')
 
@@ -90,12 +85,12 @@ def sell():
         game = request.form['game']
         description = request.form['description']
         price = request.form['price']
-        account = Account(game=game, description=description,
-                         price=price, seller=session['user'])
+        account = Account(game=game, description=description, price=price, seller=session['user'])
         db.session.add(account)
         db.session.commit()
         return redirect('/accounts')
     return render_template('sell.html')
+
 @app.route('/chat/<int:account_id>', methods=['GET', 'POST'])
 def chat(account_id):
     if 'user' not in session:
@@ -114,5 +109,6 @@ def chat(account_id):
     messages = Message.query.filter_by(account_id=account_id).all()
     return render_template('chat.html', account=account, messages=messages)
 
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+if name == '__main__':
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port)
