@@ -4,7 +4,7 @@ from flask_sqlalchemy import SQLAlchemy
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///waseet.db'
-app.secret_key = 'waseet123'
+app.secret_key = os.environ.get('SECRET_KEY', 'waseet123')
 db = SQLAlchemy(app)
 
 class User(db.Model):
@@ -29,6 +29,7 @@ def register():
         user = User(name=name, email=email, password=password)
         db.session.add(user)
         db.session.commit()
+        session['user'] = name
         return redirect('/')
     return render_template('register.html')
 
