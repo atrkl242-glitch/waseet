@@ -35,12 +35,19 @@
     </style>
 </head>
 <body>
-    <h1>مرحباً بك في منصة وسيط 👋</h1>
-    <p>المنصة العربية الأولى لتداول ألعاب الفيديو بأمان تام وضمان حق الطرفين.</p>
+  <h1>مرحباً بك في منصة وسيط 🎮</h1>
+  <p>المنصة العربية الأولى لتداول ألعاب الفيديو بأمان تام وضمان حق الطرفين.</p>
 
-    <div class="btn-container">
-        <a href="/sell" class="btn">انشر حسابك للبيع</a>
-        <a href="/login" class="btn btn-secondary">تسجيل الدخول</a>
-    </div>
+  <div class="btn-container">
+    {% if session['user'] %}
+      <p>أهلاً، {{ session['user'] }} 👋</p>
+      <a href="/sell" class="btn">انشر حسابك للبيع</a>
+      <a href="/accounts" class="btn btn-secondary">تصفح الحسابات</a>
+      <a href="/logout" class="btn btn-secondary">تسجيل الخروج</a>
+    {% else %}
+      <a href="/sell" class="btn">انشر حسابك للبيع</a>
+      <a href="/login" class="btn btn-secondary">تسجيل الدخول</a>
+    {% endif %}
+  </div>
 </body>
 </html>
