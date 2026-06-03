@@ -3,7 +3,7 @@ from flask import Flask, render_template, request, redirect, session
 from flask_sqlalchemy import SQLAlchemy
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///waseet.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///waseet.db')
 app.secret_key = os.environ.get('SECRET_KEY', 'waseet123')
 db = SQLAlchemy(app)
 app.config['SESSION_COOKIE_SECURE'] = False
