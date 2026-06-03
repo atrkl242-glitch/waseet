@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة التحكم والمحفظة - وسيط</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}">
+    <style>
+        .dashboard-layout {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 30px;
+        }
+        @media (max-width: 900px) {
+            .dashboard-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+        .wallet-card {
+            background: linear-gradient(135deg, var(--bg-card), #1b2033);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 30px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .wallet-card::after {
+            content: '';
+            position: absolute;
+            width: 150px;
+            height: 150px;
+            background: radial-gradient(circle, var(--primary-glow) 0%, transparent 70%);
+            bottom: -50px;
+            left: -50px;
+            z-index: 1;
+            pointer-events: none;
+        }
+        .wallet-balance-big {
+            font-size: 40px;
+            font-weight: 900;
+            color: var(--primary);
+            margin: 15px 0;
+            text-shadow: 0 0 15px var(--primary-glow);
+        }
+        .wallet-pending {
+            font-size: 16px;
+            color: var(--text-secondary);
+            margin-bottom: 25px;
+            background: rgba(255, 255, 255, 0.03);
+            padding: 8px 15px;
+            border-radius: 8px;
+            display: inline-block;
+        }
+        .wallet-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            border-top: 1px solid var(--border-color);
+            padding-top: 20px;
+        }
+        .wallet-form {
+            display: flex;
+            gap: 10px;
+        }
+        .wallet-input {
+            flex: 1;
+            background-color: rgba(10, 11, 14, 0.7);
+            border: 1px solid var(--border-color);
+            padding: 8px 12px;
+            border-radius: 8px;
+            color: white;
+            font-weight: 700;
+            text-align: center;
+            outline: none;
+        }
+        .wallet-input:focus {
+            border-color: var(--primary);
+        }
+        .orders-section {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 30px;
+        }
+        .section-title-dash {
+            font-size: 22px;
+            font-weight: 800;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 12px;
+        }
+        .orders-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .order-row {
+            background-color: rgba(255,255,255,0.02);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        .order-row:hover {
+            border-color: rgba(255,255,255,0.15);
+            background-color: rgba(255,255,255,0.04);
+        }
+        .order-info {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            text-align: right;
+        }
+        .order-game {
+            font-weight: 700;
+            font-size: 16px;
+            color: white;
+        }
+        .order-details-text {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+        .order-actions {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- الهيدر الموحد -->
+    <header class="navbar">
+        <div class="container">
+            <a href="/" class="logo">
+                <span>وسيط 🎮</span>
+            </a>
+            <ul class="nav-links">
+                <li><a href="/" class="nav-link">الرئيسية</a></li>
+                <li><a href="/accounts" class="nav-link">الحسابات المعروضة</a></li>
+                <li><a href="/sell" class="nav-link">بيع حساب</a></li>
+            </ul>
+            <div class="nav-user">
+                {% if current_user_obj %}
+                    <a href="/dashboard" class="wallet-badge">
+                        <span>💳 الرصيد: {{ "{:,.2f}".format(current_user_obj.balance) }} ريال</span>
+                    </a>
+                    <a href="/dashboard" class="nav-link active" style="color: var(--primary);">حسابي ({{ current_user_obj.name }})</a>
+                    {% if current_user_obj.is_admin %}
+                        <a href="/admin/disputes" class="btn btn-accent btn-sm">لوحة الإدارة 🛡️</a>
+                    {% endif %}
+                    <a href="/logout" class="btn btn-secondary btn-sm">خروج</a>
+                {% endif %}
+            </div>
+        </div>
+    </header>
+
+    <!-- رسائل التنبيه المستلمة من فلاسك -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="alerts-container">
+          {% for category, message in messages %}
+            <div class="alert alert-{{ category }}">
+              <span>{{ message }}</span>
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <main class="main-content container">
+        <div style="margin-bottom: 35px;">
+            <h1 style="font-size: 32px; font-weight: 800;">لوحة التحكم الشخصية 📊</h1>
+            <p style="color: var(--text-secondary);">مرحباً بك، <strong style="color: white;">{{ user.name }}</strong>. تحكّم بطلباتك ومحفظتك الرقمية من مكان واحد.</p>
+        </div>
+
+        <div class="dashboard-layout">
+            <!-- عمود المحفظة -->
+            <div>
+                <div class="wallet-card">
+                    <h3 style="font-size: 18px; color: var(--text-secondary);">💳 رصيد المحفظة الفعلي</h3>
+                    <div class="wallet-balance-big">{{ "{:,.2f}".format(user.balance) }} <span style="font-size: 20px;">ريال</span></div>
+                    
+                    {% if pending_balance > 0 %}
+                        <div class="wallet-pending">⏳ رصيد مبيعات معلّق: {{ "{:,.2f}".format(pending_balance) }} ريال</div>
+                    {% else %}
+                        <div class="wallet-pending">🔒 لا يوجد رصيد معلّق حالياً</div>
+                    {% endif %}
+
+                    <div class="wallet-actions">
+                        <!-- نموذج الإيداع الوهمي -->
+                        <form method="POST" action="/wallet/deposit">
+                            <div class="wallet-form">
+                                <input type="number" class="wallet-input" name="amount" value="500" min="50" step="50" required>
+                                <button type="submit" class="btn btn-primary btn-sm" style="flex: 1.5;">💵 شحن رصيد تجريبي</button>
+                            </div>
+                        </form>
+                        
+                        <!-- نموذج السحب الوهمي -->
+                        <form method="POST" action="/wallet/withdraw">
+                            <div class="wallet-form">
+                                <input type="number" class="wallet-input" name="amount" value="100" min="10" step="10" required>
+                                <button type="submit" class="btn btn-secondary btn-sm" style="flex: 1.5;">💸 سحب رصيد</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- عمود الطلبات والمعاملات -->
+            <div style="display: flex; flex-direction: column; gap: 30px;">
+                <!-- مشترياتي -->
+                <div class="orders-section">
+                    <h3 class="section-title-dash">🛒 مشترياتي (عمليات الشراء بالوساطة)</h3>
+                    <div class="orders-list">
+                        {% for order in buy_orders %}
+                            <div class="order-row">
+                                <div class="order-info">
+                                    <span class="order-game">{{ order.account.game }}</span>
+                                    <span class="order-details-text">البائع: {{ order.seller_name }} | القيمة: {{ "{:,.0f}".format(order.price) }} ريال</span>
+                                </div>
+                                <div class="order-actions">
+                                    {% if order.status == 'Pending_Payment' %}
+                                        <span class="badge badge-danger">انتظار الدفع</span>
+                                    {% elif order.status == 'Funds_Held' %}
+                                        <span class="badge badge-warning">معلق بالوساطة</span>
+                                    {% elif order.status == 'Credentials_Submitted' %}
+                                        <span class="badge badge-info">تم تسليم الحساب</span>
+                                    {% elif order.status == 'Completed' %}
+                                        <span class="badge badge-success">مكتمل</span>
+                                    {% elif order.status == 'Disputed' %}
+                                        <span class="badge badge-warning">تحت النزاع</span>
+                                    {% elif order.status == 'Refunded' %}
+                                        <span class="badge badge-danger">مسترجع</span>
+                                    {% endif %}
+                                    <a href="/order/{{ order.id }}" class="btn btn-secondary btn-sm">تتبع الطلب 🛡️</a>
+                                </div>
+                            </div>
+                        {% else %}
+                            <p style="text-align: center; color: var(--text-muted); padding: 20px 0;">لم تقم بأي عملية شراء بعد.</p>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- مبيعاتي -->
+                <div class="orders-section">
+                    <h3 class="section-title-dash">💰 مبيعاتي (طلبات بيع حساباتي)</h3>
+                    <div class="orders-list">
+                        {% for order in sell_orders %}
+                            <div class="order-row">
+                                <div class="order-info">
+                                    <span class="order-game">{{ order.account.game }}</span>
+                                    <span class="order-details-text">المشتري: {{ order.buyer_name }} | القيمة: {{ "{:,.0f}".format(order.price) }} ريال</span>
+                                </div>
+                                <div class="order-actions">
+                                    {% if order.status == 'Pending_Payment' %}
+                                        <span class="badge badge-danger">انتظار الدفع</span>
+                                    {% elif order.status == 'Funds_Held' %}
+                                        <span class="badge badge-warning">انتظار تسليم الحساب</span>
+                                    {% elif order.status == 'Credentials_Submitted' %}
+                                        <span class="badge badge-info">تم التسليم - فحص المشتري</span>
+                                    {% elif order.status == 'Completed' %}
+                                        <span class="badge badge-success">مكتمل</span>
+                                    {% elif order.status == 'Disputed' %}
+                                        <span class="badge badge-warning">تحت النزاع</span>
+                                    {% elif order.status == 'Refunded' %}
+                                        <span class="badge badge-danger">مسترجع للمشتري</span>
+                                    {% endif %}
+                                    <a href="/order/{{ order.id }}" class="btn btn-secondary btn-sm">تتبع الطلب 🛡️</a>
+                                </div>
+                            </div>
+                        {% else %}
+                            <p style="text-align: center; color: var(--text-muted); padding: 20px 0;">لم يطلب أحد شراء حساباتك المعروضة بعد.</p>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <p>جميع الحقوق محفوظة © 2026 لـ منصة <span>وسيط</span> لبيع الحسابات بأمان.</p>
+    </footer>
+
+</body>
+</html>

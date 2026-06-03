@@ -2,63 +2,129 @@
 <html dir="rtl" lang="ar">
 <head>
     <meta charset="UTF-8">
-    <title>بيع حساب - وسيط</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>عرض حساب للبيع - وسيط</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}">
     <style>
-        body {
-            background: #0f0f0f;
-            color: white;
-            font-family: Arial;
-            text-align: center;
-            padding: 50px;
-        }
-        h1 { color: #00ff88; }
-        input, textarea, select {
-            display: block;
-            margin: 10px auto;
-            padding: 12px;
-            width: 300px;
-            border-radius: 8px;
-            border: none;
-            font-size: 16px;
-        }
-        .btn {
-            background: #00ff88;
-            color: black;
-            padding: 12px 40px;
-            border: none;
-            border-radius: 10px;
-            font-size: 18px;
-            cursor: pointer;
-            margin-top: 15px;
+        .sell-form-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.3);
         }
     </style>
 </head>
 <body>
-    <h1>🎮 بيع حساب</h1>
-    <form method="POST">
-        <select name="game">
-            <option>فورتنايت</option>
-            <option>ببجي</option>
-            <option>فري فاير</option>
-            <option>كلاش اوف كلانس</option>
-            <option>كلاش رويال</option>
-            <option>فالورانت</option>
-            <option>أوفر ووتش 2</option>
-            <option>ليج اوف ليجندز</option>
-            <option>كول اوف ديوتي موبايل</option>
-            <option>ماين كرافت</option>
-            <option>روبلوكس</option>
-            <option>بوانتي رش</option>
-            <option>براول ستارز</option>
-            <option>هاي فايف</option>
-            <option>GTA Online</option>
-            <option>FIFA</option>
-            <option>أبيكس ليجندز</option>
-            <option>أخرى</option>
-        </select>
-        <input type="text" name="description" placeholder="وصف الحساب" required>
-        <input type="number" name="price" placeholder="السعر بالريال" required>
-        <button class="btn" type="submit">نشر الحساب</button>
-    </form>
+
+    <!-- الهيدر الموحد -->
+    <header class="navbar">
+        <div class="container">
+            <a href="/" class="logo">
+                <span>وسيط 🎮</span>
+            </a>
+            <ul class="nav-links">
+                <li><a href="/" class="nav-link">الرئيسية</a></li>
+                <li><a href="/accounts" class="nav-link">الحسابات المعروضة</a></li>
+                <li><a href="/sell" class="nav-link active">بيع حساب</a></li>
+            </ul>
+            <div class="nav-user">
+                {% if current_user_obj %}
+                    <a href="/dashboard" class="wallet-badge">
+                        <span>💳 الرصيد: {{ "{:,.2f}".format(current_user_obj.balance) }} ريال</span>
+                    </a>
+                    <a href="/dashboard" class="nav-link" style="color: var(--primary);">حسابي ({{ current_user_obj.name }})</a>
+                    {% if current_user_obj.is_admin %}
+                        <a href="/admin/disputes" class="btn btn-accent btn-sm">لوحة الإدارة 🛡️</a>
+                    {% endif %}
+                    <a href="/logout" class="btn btn-secondary btn-sm">خروج</a>
+                {% else %}
+                    <a href="/login" class="nav-link">تسجيل الدخول</a>
+                    <a href="/register" class="btn btn-primary btn-sm">إنشاء حساب</a>
+                {% endif %}
+            </div>
+        </div>
+    </header>
+
+    <!-- رسائل التنبيه المستلمة من فلاسك -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="alerts-container">
+          {% for category, message in messages %}
+            <div class="alert alert-{{ category }}">
+              <span>{{ message }}</span>
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <main class="main-content container">
+        <div class="sell-form-container">
+            <h2 class="form-title">🎮 اعرض حسابك للبيع بالوساطة</h2>
+            <p style="color: var(--text-secondary); text-align: center; margin-bottom: 30px; font-size: 14px; line-height: 1.6;">
+                املأ تفاصيل حسابك بدقة وسيتكفل الوسيط بضمان استلامك للمبلغ فوراً بعد تأكيد المشتري للاستلام.
+            </p>
+
+            <form method="POST">
+                <div class="form-group">
+                    <label class="form-label" for="game">اللعبة الإلكترونية</label>
+                    <select class="form-input" id="game" name="game" required style="cursor: pointer;">
+                        <option value="فورتنايت">فورتنايت (Fortnite)</option>
+                        <option value="ببجي موبايل">ببجي موبايل (PUBG Mobile)</option>
+                        <option value="كول اوف ديوتي">كول اوف ديوتي (Call of Duty)</option>
+                        <option value="فالورانت">فالورانت (Valorant)</option>
+                        <option value="ليج اوف ليجندز">ليج اوف ليجندز (League of Legends)</option>
+                        <option value="ماين كرافت">ماين كرافت (Minecraft)</option>
+                        <option value="روبلوكس">روبلوكس (Roblox)</option>
+                        <option value="أوفر ووتش 2">أوفر ووتش 2 (Overwatch 2)</option>
+                        <option value="أبيكس ليجندز">أبيكس ليجندز (Apex Legends)</option>
+                        <option value="فيفا / إف سي">فيفا / إف سي (FIFA / EA FC)</option>
+                        <option value="جي تي أي 5">جي تي أي 5 (GTA V Online)</option>
+                        <option value="فري فاير">فري فاير (Free Fire)</option>
+                        <option value="كلاش اوف كلانس">كلاش اوف كلانس (Clash of Clans)</option>
+                        <option value="أخرى">لعبة أخرى / حساب رقمي آخر</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="platform">منصة التشغيل / الجهاز</label>
+                    <select class="form-input" id="platform" name="platform" required style="cursor: pointer;">
+                        <option value="PC">كمبيوتر (PC / Steam / Epic)</option>
+                        <option value="PlayStation">بلايستيشن (PlayStation Network)</option>
+                        <option value="Xbox">اكس بوكس (Xbox Live)</option>
+                        <option value="Mobile">جوال (iOS / Android)</option>
+                        <option value="Nintendo Switch">نينتندو سويتش (Nintendo)</option>
+                        <option value="أخرى">منصة أخرى</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="price">السعر المطلوب (بالريال السعودي)</label>
+                    <input class="form-input" type="number" id="price" name="price" placeholder="مثال: 250" min="5" step="1" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="image_url">رابط صورة تعبيرية للحساب (اختياري)</label>
+                    <input class="form-input" type="url" id="image_url" name="image_url" placeholder="https://example.com/image.png">
+                    <span style="color: var(--text-muted); font-size: 11px; display: block; margin-top: 5px;">يمكنك وضع رابط لصورة تحتوي على إثبات محتويات الحساب لتسريع عملية البيع.</span>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="description">وصف الحساب والمحتويات النادرة</label>
+                    <textarea class="form-input" id="description" name="description" placeholder="اكتب تفاصيل الحساب، مثلاً: مستوى الحساب، عدد السكنات النادرة، الأسلحة المطورة، التقييم الحالي، إلخ..." required></textarea>
+                </div>
+
+                <button class="btn btn-primary" type="submit" style="width: 100%; margin-top: 20px;">🚀 نشر الحساب للبيع بالوساطة</button>
+            </form>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <p>جميع الحقوق محفوظة © 2026 لـ منصة <span>وسيط</span> لبيع الحسابات بأمان.</p>
+    </footer>
+
 </body>
 </html>

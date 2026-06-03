@@ -2,52 +2,225 @@
 <html dir="rtl" lang="ar">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>وسيط - المنصة الآمنة لبيع وشراء الحسابات</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}">
     <style>
-        body {
-            background: #0f0f0f;
-            color: white;
-            font-family: Arial, sans-serif;
+        .hero {
+            padding: 80px 0;
             text-align: center;
-            padding: 50px;
+            position: relative;
         }
-        h1 { color: #00ff88; font-size: 36px; }
-        p { color: #cccccc; font-size: 18px; margin-bottom: 30px; }
-        .btn-container { margin-top: 20px; }
-        .btn {
-            background: #00ff88;
-            color: black;
-            padding: 12px 40px;
-            border: none;
-            border-radius: 10px;
-            font-size: 18px;
-            cursor: pointer;
-            text-decoration: none;
-            margin: 10px;
-            display: inline-block;
-            font-weight: bold;
+        .hero::after {
+            content: '';
+            position: absolute;
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, var(--primary-glow) 0%, transparent 70%);
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: -1;
+            pointer-events: none;
         }
-        .btn-secondary {
-            background: transparent;
-            color: #00ff88;
-            border: 2px solid #00ff88;
+        .hero-title {
+            font-size: 48px;
+            font-weight: 800;
+            line-height: 1.3;
+            margin-bottom: 20px;
+        }
+        .hero-title span {
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 30px var(--primary-glow);
+        }
+        .hero-desc {
+            font-size: 20px;
+            color: var(--text-secondary);
+            max-width: 700px;
+            margin: 0 auto 40px auto;
+            line-height: 1.6;
+        }
+        .cta-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 50px;
+        }
+        .features {
+            padding: 60px 0;
+            background: rgba(18, 20, 28, 0.5);
+            border-radius: 24px;
+            border: 1px solid var(--border-color);
+            margin: 40px 0;
+        }
+        .features-title {
+            text-align: center;
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 40px;
+        }
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+            padding: 0 40px;
+        }
+        .feature-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            padding: 30px;
+            border-radius: 16px;
+            text-align: center;
+        }
+        .feature-icon {
+            width: 60px;
+            height: 60px;
+            background: rgba(0, 255, 136, 0.08);
+            border: 1px solid rgba(0, 255, 136, 0.2);
+            color: var(--primary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            margin: 0 auto 20px auto;
+            box-shadow: 0 0 15px var(--primary-glow);
+        }
+        .feature-name {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+        .feature-desc {
+            color: var(--text-secondary);
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin: 60px 0;
+            text-align: center;
+        }
+        .stat-item {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            padding: 25px;
+            border-radius: 12px;
+        }
+        .stat-number {
+            font-size: 36px;
+            font-weight: 800;
+            color: var(--primary);
+            text-shadow: 0 0 10px var(--primary-glow);
+        }
+        .stat-label {
+            color: var(--text-secondary);
+            font-size: 15px;
+            margin-top: 5px;
         }
     </style>
 </head>
 <body>
-  <h1>مرحباً بك في منصة وسيط 🎮</h1>
-  <p>المنصة العربية الأولى لتداول ألعاب الفيديو بأمان تام وضمان حق الطرفين.</p>
 
-  <div class="btn-container">
-    {% if session['user'] %}
-      <p>أهلاً، {{ session['user'] }} 👋</p>
-      <a href="/sell" class="btn">انشر حسابك للبيع</a>
-      <a href="/accounts" class="btn btn-secondary">تصفح الحسابات</a>
-      <a href="/logout" class="btn btn-secondary">تسجيل الخروج</a>
-    {% else %}
-      <a href="/sell" class="btn">انشر حسابك للبيع</a>
-      <a href="/login" class="btn btn-secondary">تسجيل الدخول</a>
-    {% endif %}
-  </div>
+    <!-- الهيدر الموحد -->
+    <header class="navbar">
+        <div class="container">
+            <a href="/" class="logo">
+                <span>وسيط 🎮</span>
+            </a>
+            <ul class="nav-links">
+                <li><a href="/" class="nav-link active">الرئيسية</a></li>
+                <li><a href="/accounts" class="nav-link">الحسابات المعروضة</a></li>
+                <li><a href="/sell" class="nav-link">بيع حساب</a></li>
+            </ul>
+            <div class="nav-user">
+                {% if current_user_obj %}
+                    <a href="/dashboard" class="wallet-badge">
+                        <span>💳 الرصيد: {{ "{:,.2f}".format(current_user_obj.balance) }} ريال</span>
+                    </a>
+                    <a href="/dashboard" class="nav-link" style="color: var(--primary);">حسابي ({{ current_user_obj.name }})</a>
+                    {% if current_user_obj.is_admin %}
+                        <a href="/admin/disputes" class="btn btn-accent btn-sm">لوحة الإدارة 🛡️</a>
+                    {% endif %}
+                    <a href="/logout" class="btn btn-secondary btn-sm">خروج</a>
+                {% else %}
+                    <a href="/login" class="nav-link">تسجيل الدخول</a>
+                    <a href="/register" class="btn btn-primary btn-sm">إنشاء حساب</a>
+                {% endif %}
+            </div>
+        </div>
+    </header>
+
+    <!-- رسائل التنبيه المستلمة من فلاسك -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="alerts-container">
+          {% for category, message in messages %}
+            <div class="alert alert-{{ category }}">
+              <span>{{ message }}</span>
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <!-- محتوى الصفحة الرئيسية -->
+    <main class="main-content container">
+        <section class="hero">
+            <h1 class="hero-title">منصة <span>وسيط</span> الآمنة لتداول الحسابات</h1>
+            <p class="hero-desc">
+                المنصة العربية الأولى المتكاملة لتداول حسابات الألعاب والخدمات الرقمية. نضمن حق المشتري والبائع من خلال نظام محفظة رقمية معلّقة ووساطة خالية من المخاطر.
+            </p>
+            <div class="cta-buttons">
+                <a href="/accounts" class="btn btn-primary">🎮 تصفح الحسابات المتاحة</a>
+                <a href="/sell" class="btn btn-secondary">💰 اعرض حسابك للبيع</a>
+            </div>
+        </section>
+
+        <section class="features">
+            <h2 class="features-title">كيف تعمل منصة وساطة الآمنة؟ 🤔</h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">1</div>
+                    <h3 class="feature-name">طلب الشراء وحجز الأموال</h3>
+                    <p class="feature-desc">يطلب المشتري الحساب ويقوم بدفع قيمته. يتم حجز رصيد المشتري وتعليقه فوراً في نظام أمان الوسيط، ويتم تنبيه البائع بالدفع.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">2</div>
+                    <h3 class="feature-name">تسليم بيانات الحساب</h3>
+                    <p class="feature-desc">يقوم البائع بكتابة معلومات تسجيل الدخول (الايميل، الباسورد، إلخ) في نظام الأمان المخصص، وتظهر مشفرة أو معلنة للمشتري فوراً.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">3</div>
+                    <h3 class="feature-name">فحص الحساب وتأكيد الاستلام</h3>
+                    <p class="feature-desc">يقوم المشتري بالدخول للحساب، فحص المحتويات، وتغيير البيانات لتأمين الحساب، ثم يضغط على تأكيد الاستلام لتحرير المبلغ للبائع.</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="stats">
+            <div class="stat-item">
+                <div class="stat-number">١٠٠٪</div>
+                <div class="stat-label">أمان وضمان للطرفين</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">24/7</div>
+                <div class="stat-label">دعم وحل نزاعات سريع</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">0%</div>
+                <div class="stat-label">رسوم خفية أو مفاجئة</div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <p>جميع الحقوق محفوظة © 2026 لـ منصة <span>وسيط</span> لبيع الحسابات بأمان.</p>
+    </footer>
+
 </body>
 </html>

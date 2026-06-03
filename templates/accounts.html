@@ -1,70 +1,280 @@
 <!DOCTYPE html>
 <html dir="rtl" lang="ar">
 <head>
-  <meta charset="UTF-8">
-  <title>الحسابات - وسيط</title>
-  <style>
-    body {
-      background: #0f0f0f;
-      color: white;
-      font-family: Arial, sans-serif;
-      padding: 40px 20px;
-      text-align: center;
-    }
-    h1 { color: #00ff88; margin-bottom: 30px; }
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-      gap: 20px;
-      max-width: 1100px;
-      margin: 0 auto;
-    }
-    .card {
-      background: #1a1a1a;
-      border-radius: 12px;
-      padding: 20px;
-      border: 1px solid #00ff88;
-      text-align: right;
-    }
-    .card h2 { color: #00ff88; margin-bottom: 10px; }
-    .card p { color: #ccc; margin: 6px 0; }
-    .price { color: #00ff88; font-size: 22px; font-weight: bold; }
-    .seller { color: #888; font-size: 14px; }
-    .btn {
-      display: inline-block;
-      margin-top: 15px;
-      background: #00ff88;
-      color: black;
-      padding: 10px 25px;
-      border-radius: 8px;
-      text-decoration: none;
-      font-weight: bold;
-    }
-    .back {
-      display: inline-block;
-      margin-bottom: 25px;
-      color: #00ff88;
-      text-decoration: none;
-      font-size: 16px;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>الحسابات المعروضة - وسيط</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}">
+    <style>
+        .filter-section {
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            padding: 20px;
+            border-radius: 16px;
+            margin-bottom: 30px;
+        }
+        .filter-form {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: flex-end;
+        }
+        .filter-group {
+            flex: 1;
+            min-width: 200px;
+            text-align: right;
+        }
+        .filter-select {
+            width: 100%;
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            padding: 10px 15px;
+            border-radius: 8px;
+            color: white;
+            outline: none;
+            cursor: pointer;
+        }
+        .filter-select:focus {
+            border-color: var(--primary);
+        }
+        .account-card {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            height: 100%;
+        }
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 15px;
+        }
+        .game-title {
+            font-size: 22px;
+            font-weight: 800;
+            color: white;
+        }
+        .platform-badge {
+            background: rgba(0, 240, 255, 0.1);
+            color: var(--accent);
+            border: 1px solid rgba(0, 240, 255, 0.25);
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 700;
+        }
+        .platform-pc { background: rgba(0, 240, 255, 0.08); color: var(--accent); border-color: rgba(0, 240, 255, 0.2); }
+        .platform-playstation { background: rgba(112, 0, 255, 0.08); color: #a855f7; border-color: rgba(112, 0, 255, 0.2); }
+        .platform-xbox { background: rgba(72, 187, 120, 0.08); color: var(--success); border-color: rgba(72, 187, 120, 0.2); }
+        .platform-mobile { background: rgba(237, 137, 54, 0.08); color: var(--warning); border-color: rgba(237, 137, 54, 0.2); }
+
+        .account-img {
+            width: 100%;
+            height: 150px;
+            background: linear-gradient(135deg, #1b2030, #131722);
+            border-radius: 10px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+            font-size: 40px;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+        }
+        .account-img img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .account-img-overlay {
+            position: absolute;
+            bottom: 8px;
+            right: 8px;
+            background: rgba(10, 11, 14, 0.85);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+        .card-desc {
+            color: var(--text-secondary);
+            font-size: 14px;
+            line-height: 1.6;
+            margin-bottom: 20px;
+            flex-grow: 1;
+            text-align: right;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .card-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 1px solid var(--border-color);
+            padding-top: 15px;
+            margin-top: auto;
+        }
+        .price-tag {
+            text-align: right;
+        }
+        .price-value {
+            font-size: 24px;
+            font-weight: 800;
+            color: var(--primary);
+            text-shadow: 0 0 10px rgba(0, 255, 136, 0.15);
+        }
+        .price-label {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+    </style>
 </head>
 <body>
-  <a href="/" class="back">→ الرئيسية</a>
-  <h1>🎮 الحسابات المعروضة</h1>
 
-  <div class="grid">
-    {% for account in accounts %}
-    <div class="card">
-      <h2>{{ account.game }}</h2>
-      <p>{{ account.description }}</p>
-      <p class="price">{{ account.price }} ريال</p>
-      <p class="seller">البائع: {{ account.seller }}</p>
-      <a href="/chat/{{ account.id }}" class="btn">تواصل مع البائع</a>
-    </div>
-    {% else %}
-    <p style="text-align:center; color:#888;">لا يوجد حسابات معروضة حالياً</p>
-    {% endfor %}
-  </div>
+    <!-- الهيدر الموحد -->
+    <header class="navbar">
+        <div class="container">
+            <a href="/" class="logo">
+                <span>وسيط 🎮</span>
+            </a>
+            <ul class="nav-links">
+                <li><a href="/" class="nav-link">الرئيسية</a></li>
+                <li><a href="/accounts" class="nav-link active">الحسابات المعروضة</a></li>
+                <li><a href="/sell" class="nav-link">بيع حساب</a></li>
+            </ul>
+            <div class="nav-user">
+                {% if current_user_obj %}
+                    <a href="/dashboard" class="wallet-badge">
+                        <span>💳 الرصيد: {{ "{:,.2f}".format(current_user_obj.balance) }} ريال</span>
+                    </a>
+                    <a href="/dashboard" class="nav-link" style="color: var(--primary);">حسابي ({{ current_user_obj.name }})</a>
+                    {% if current_user_obj.is_admin %}
+                        <a href="/admin/disputes" class="btn btn-accent btn-sm">لوحة الإدارة 🛡️</a>
+                    {% endif %}
+                    <a href="/logout" class="btn btn-secondary btn-sm">خروج</a>
+                {% else %}
+                    <a href="/login" class="nav-link">تسجيل الدخول</a>
+                    <a href="/register" class="btn btn-primary btn-sm">إنشاء حساب</a>
+                {% endif %}
+            </div>
+        </div>
+    </header>
+
+    <!-- رسائل التنبيه المستلمة من فلاسك -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="alerts-container">
+          {% for category, message in messages %}
+            <div class="alert alert-{{ category }}">
+              <span>{{ message }}</span>
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <main class="main-content container">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+            <h1 style="font-size: 32px; font-weight: 800;">🎮 الحسابات المعروضة</h1>
+            <a href="/sell" class="btn btn-primary btn-sm">💰 اعرض حسابك للبيع</a>
+        </div>
+
+        <!-- فلاتر التصفح -->
+        <section class="filter-section">
+            <form method="GET" action="/accounts" class="filter-form">
+                <div class="filter-group">
+                    <label class="form-label">تصفية حسب اللعبة</label>
+                    <select name="game" class="filter-select">
+                        <option value="">جميع الألعاب</option>
+                        {% for g in games %}
+                            <option value="{{ g }}" {% if selected_game == g %}selected{% endif %}>{{ g }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label class="form-label">تصفية حسب المنصة</label>
+                    <select name="platform" class="filter-select">
+                        <option value="">جميع المنصات</option>
+                        {% for p in platforms %}
+                            <option value="{{ p }}" {% if selected_platform == p %}selected{% endif %}>{{ p }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn btn-secondary" type="submit">بحث 🔍</button>
+                    {% if selected_game or selected_platform %}
+                        <a href="/accounts" class="btn btn-danger btn-sm" style="height: 42px; display: inline-flex; align-items: center;">إعادة تعيين</a>
+                    {% endif %}
+                </div>
+            </form>
+        </section>
+
+        <!-- شبكة عرض الحسابات -->
+        <div class="grid">
+            {% for account in accounts %}
+                <div class="card account-card">
+                    <div>
+                        <div class="card-header">
+                            <h2 class="game-title">{{ account.game }}</h2>
+                            {% if account.platform == 'PC' or account.platform == 'الحاسب الشخصي' %}
+                                <span class="platform-badge platform-pc">💻 PC</span>
+                            {% elif account.platform == 'PlayStation' or account.platform == 'بلايستيشن' %}
+                                <span class="platform-badge platform-playstation">🎮 PS5 / PS4</span>
+                            {% elif account.platform == 'Xbox' or account.platform == 'اكس بوكس' %}
+                                <span class="platform-badge platform-xbox">💚 Xbox</span>
+                            {% elif account.platform == 'Mobile' or account.platform == 'جوال' %}
+                                <span class="platform-badge platform-mobile">📱 Mobile</span>
+                            {% else %}
+                                <span class="platform-badge">{{ account.platform }}</span>
+                            {% endif %}
+                        </div>
+
+                        <!-- صورة اللعبة أو افتراضية -->
+                        <div class="account-img">
+                            {% if account.image_url %}
+                                <img src="{{ account.image_url }}" alt="{{ account.game }}">
+                            {% else %}
+                                🎮
+                            {% endif %}
+                            <div class="account-img-overlay">بواسطة: {{ account.seller }}</div>
+                        </div>
+
+                        <p class="card-desc">{{ account.description }}</p>
+                    </div>
+
+                    <div class="card-footer">
+                        <div class="price-tag">
+                            <div class="price-value">{{ "{:,.0f}".format(account.price) }} ريال</div>
+                            <div class="price-label">السعر النهائي للوساطة</div>
+                        </div>
+
+                        {% if current_user_obj and current_user_obj.name == account.seller %}
+                            <button class="btn btn-secondary btn-sm" disabled style="cursor: not-allowed; opacity: 0.6;">حسابك المعروض</button>
+                        {% else %}
+                            <form method="POST" action="/order/create/{{ account.id }}">
+                                <button type="submit" class="btn btn-primary btn-sm">شراء بالوساطة 🛡️</button>
+                            </form>
+                        {% endif %}
+                    </div>
+                </div>
+            {% else %}
+                <div style="grid-column: 1 / -1; text-align: center; padding: 60px 20px; background-color: var(--bg-secondary); border-radius: 16px; border: 1px solid var(--border-color);">
+                    <p style="font-size: 18px; color: var(--text-secondary); margin-bottom: 20px;">لا توجد حسابات معروضة حالياً تطابق الفلاتر المحددة.</p>
+                    <a href="/sell" class="btn btn-primary">💰 كن أول من ينشر حسابه للبيع</a>
+                </div>
+            {% endfor %}
+        </div>
+    </main>
+
+    <footer class="footer">
+        <p>جميع الحقوق محفوظة © 2026 لـ منصة <span>وسيط</span> لبيع الحسابات بأمان.</p>
+    </footer>
+
 </body>
 </html>

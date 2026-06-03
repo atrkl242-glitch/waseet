@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تفاصيل عملية الوساطة - وسيط</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}">
+    <style>
+        .order-layout {
+            display: grid;
+            grid-template-columns: 3fr 2fr;
+            gap: 30px;
+        }
+        @media (max-width: 900px) {
+            .order-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+        .order-workspace {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+        }
+        .credentials-box {
+            background: rgba(0, 240, 255, 0.05);
+            border: 1px dashed var(--accent);
+            padding: 20px;
+            border-radius: 12px;
+            font-family: monospace;
+            color: #a5f3fc;
+            font-size: 16px;
+            margin: 20px 0;
+            text-align: left;
+            direction: ltr;
+            white-space: pre-wrap;
+        }
+        /* Chat Box */
+        .chat-container {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 25px;
+            display: flex;
+            flex-direction: column;
+            height: 550px;
+        }
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            padding-bottom: 15px;
+            padding-left: 5px;
+            padding-right: 5px;
+        }
+        .chat-bubble {
+            max-width: 80%;
+            padding: 10px 16px;
+            border-radius: 14px;
+            font-size: 14px;
+            line-height: 1.5;
+            position: relative;
+        }
+        .chat-bubble-sender {
+            font-size: 11px;
+            font-weight: 800;
+            margin-bottom: 4px;
+            display: block;
+        }
+        .chat-time {
+            font-size: 9px;
+            color: var(--text-muted);
+            margin-top: 5px;
+            text-align: left;
+            display: block;
+        }
+        .bubble-buyer {
+            align-self: flex-start;
+            background-color: rgba(0, 255, 136, 0.08);
+            border: 1px solid rgba(0, 255, 136, 0.2);
+            color: white;
+            border-top-right-radius: 2px;
+        }
+        .bubble-buyer .chat-bubble-sender {
+            color: var(--primary);
+        }
+        .bubble-seller {
+            align-self: flex-end;
+            background-color: rgba(112, 0, 255, 0.08);
+            border: 1px solid rgba(112, 0, 255, 0.2);
+            color: white;
+            border-top-left-radius: 2px;
+        }
+        .bubble-seller .chat-bubble-sender {
+            color: #b76eff;
+        }
+        .bubble-admin {
+            align-self: center;
+            background: linear-gradient(135deg, rgba(237, 137, 54, 0.15), rgba(245, 101, 101, 0.15));
+            border: 1px solid var(--warning);
+            color: white;
+            text-align: center;
+            max-width: 90%;
+        }
+        .bubble-admin .chat-bubble-sender {
+            color: var(--warning);
+        }
+        .chat-form {
+            display: flex;
+            gap: 10px;
+            border-top: 1px solid var(--border-color);
+            padding-top: 15px;
+        }
+        .chat-input {
+            flex: 1;
+            background-color: rgba(10, 11, 14, 0.7);
+            border: 1px solid var(--border-color);
+            padding: 10px 15px;
+            border-radius: 8px;
+            color: white;
+            outline: none;
+            font-size: 14px;
+        }
+        .chat-input:focus {
+            border-color: var(--primary);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- الهيدر الموحد -->
+    <header class="navbar">
+        <div class="container">
+            <a href="/" class="logo">
+                <span>وسيط 🎮</span>
+            </a>
+            <ul class="nav-links">
+                <li><a href="/" class="nav-link">الرئيسية</a></li>
+                <li><a href="/accounts" class="nav-link">الحسابات المعروضة</a></li>
+                <li><a href="/sell" class="nav-link">بيع حساب</a></li>
+            </ul>
+            <div class="nav-user">
+                {% if current_user_obj %}
+                    <a href="/dashboard" class="wallet-badge">
+                        <span>💳 الرصيد: {{ "{:,.2f}".format(current_user_obj.balance) }} ريال</span>
+                    </a>
+                    <a href="/dashboard" class="nav-link" style="color: var(--primary);">حسابي ({{ current_user_obj.name }})</a>
+                    {% if current_user_obj.is_admin %}
+                        <a href="/admin/disputes" class="btn btn-accent btn-sm">لوحة الإدارة 🛡️</a>
+                    {% endif %}
+                    <a href="/logout" class="btn btn-secondary btn-sm">خروج</a>
+                {% endif %}
+            </div>
+        </div>
+    </header>
+
+    <!-- رسائل التنبيه المستلمة من فلاسك -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="alerts-container">
+          {% for category, message in messages %}
+            <div class="alert alert-{{ category }}">
+              <span>{{ message }}</span>
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <main class="main-content container">
+        <div style="margin-bottom: 30px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+            <div>
+                <h1 style="font-size: 30px; font-weight: 800;">تتبع طلب الوساطة الأمنية 🛡️</h1>
+                <p style="color: var(--text-secondary);">رقم المعاملة: <span style="color: white; font-weight: 700;">#{{ order.id }}</span> | تاريخ الطلب: {{ order.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
+            </div>
+            <a href="/dashboard" class="btn btn-secondary btn-sm">← لوحة التحكم</a>
+        </div>
+
+        <!-- شريط التقدم لحالة الطلب -->
+        {% set status_weights = {
+            'Pending_Payment': 0,
+            'Funds_Held': 33,
+            'Credentials_Submitted': 66,
+            'Completed': 100,
+            'Disputed': 66,
+            'Refunded': 100
+        } %}
+        {% set progress = status_weights.get(order.status, 0) %}
+        
+        <div class="status-tracker">
+            <div class="tracker-progress" style="width: {{ progress }}%;"></div>
+            
+            <div class="status-step {% if progress >= 0 %}completed{% endif %} {% if order.status == 'Pending_Payment' %}active{% endif %}">
+                <div class="step-bubble">1</div>
+                <div class="step-label">طلب الوساطة</div>
+            </div>
+            
+            <div class="status-step {% if progress >= 33 %}completed{% endif %} {% if order.status == 'Funds_Held' %}active{% endif %}">
+                <div class="step-bubble">2</div>
+                <div class="step-label">حجز الأموال</div>
+            </div>
+            
+            <div class="status-step {% if progress >= 66 %}completed{% endif %} {% if order.status == 'Credentials_Submitted' %}active{% endif %}">
+                <div class="step-bubble">3</div>
+                <div class="step-label">تسليم الحساب</div>
+            </div>
+            
+            <div class="status-step {% if progress >= 100 %}completed{% endif %} {% if order.status == 'Completed' %}active{% endif %}">
+                <div class="step-bubble">4</div>
+                <div class="step-label">اكتمال وتأكيد</div>
+            </div>
+        </div>
+
+        <div class="order-layout">
+            <!-- مساحة العمل التفاعلية للوساطة -->
+            <div>
+                <!-- تفاصيل الحساب الأساسية -->
+                <div class="order-workspace" style="margin-bottom: 25px; border-bottom: 3px solid var(--primary);">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 15px;">
+                        <h3 style="font-size: 22px; font-weight: 800; color: white;">🎮 تفاصيل السلعة المعروضة</h3>
+                        <span class="badge badge-info">{{ order.account.platform }}</span>
+                    </div>
+                    <p style="font-size: 17px; font-weight: 700; color: var(--primary); margin-bottom: 10px;">{{ order.account.game }}</p>
+                    <p style="color: var(--text-secondary); line-height: 1.6; margin-bottom: 15px;">{{ order.account.description }}</p>
+                    <div style="font-size: 20px; font-weight: 800; color: var(--primary);">
+                        القيمة المتفق عليها: {{ "{:,.0f}".format(order.price) }} ريال سعودي
+                    </div>
+                </div>
+
+                <!-- مساحة الإجراءات التفاعلية حسب الحالة -->
+                <div class="order-workspace">
+                    <h3 style="font-size: 20px; font-weight: 800; margin-bottom: 20px;">⚡ إجراءات المعاملة الحالية</h3>
+
+                    <!-- 1. بانتظار الدفع -->
+                    {% if order.status == 'Pending_Payment' %}
+                        {% if user.name == order.buyer_name %}
+                            <div class="alert alert-warning" style="margin-bottom: 20px;">
+                                <span><strong>تنبيه للمشتري:</strong> يرجى دفع قيمة الحساب ليتسنى للوسيط حجزها وإبلاغ البائع بإدخال بيانات الحساب.</span>
+                            </div>
+                            <p style="margin-bottom: 20px; color: var(--text-secondary);">قيمة الطلب: <strong>{{ order.price }} ريال</strong> | رصيدك المتاح: <strong>{{ user.balance }} ريال</strong></p>
+                            
+                            <form method="POST">
+                                <input type="hidden" name="action" value="pay">
+                                <button type="submit" class="btn btn-primary" style="width: 100%;">💳 دفع قيمة الحساب وتعليقها بالوساطة</button>
+                            </form>
+                        {% else %}
+                            <div class="alert alert-info">
+                                <span><strong>بانتظار المشتري:</strong> تم تقديم طلب الوساطة وبانتظار قيام المشتري ببدء عملية الدفع وتعليق الأموال في الأمان.</span>
+                            </div>
+                        {% endif %}
+
+                    <!-- 2. تم حجز الأموال في الوساطة وبانتظار بيانات البائع -->
+                    {% elif order.status == 'Funds_Held' %}
+                        {% if user.name == order.seller_name %}
+                            <div class="alert alert-success" style="margin-bottom: 20px;">
+                                <span><strong>وصلت الأموال للوسيط!</strong> يرجى تزويد المشتري ببيانات الدخول للحساب والبريد الإلكتروني المربوط وأي معلومات أخرى هنا.</span>
+                            </div>
+                            
+                            <form method="POST">
+                                <input type="hidden" name="action" value="submit_credentials">
+                                <div class="form-group">
+                                    <label class="form-label" for="credentials">بيانات الحساب السرية للتسليم</label>
+                                    <textarea class="form-input" id="credentials" name="credentials" placeholder="اكتب هنا معلومات الحساب، مثل:
+اسم المستخدم: test@mail.com
+كلمة المرور: password123
+رمز التحقق أو الايميل البديل إن وجد..." required style="height: 120px; font-family: monospace; text-align: right;"></textarea>
+                                </div>
+                                <button type="submit" class="btn btn-primary" style="width: 100%;">🚀 تسليم معلومات الحساب للمشتري</button>
+                            </form>
+                        {% else %}
+                            <div class="alert alert-info">
+                                <span><strong>الأموال محجوزة بأمان 🔒:</strong> قمنا بتعليق المبلغ بنجاح. البائع يقوم حالياً بإدخال معلومات وبيانات الحساب لتسليمها لك.</span>
+                            </div>
+                        {% endif %}
+
+                    <!-- 3. تم تسليم البيانات وفحص المشتري -->
+                    {% elif order.status == 'Credentials_Submitted' %}
+                        {% if user.name == order.buyer_name %}
+                            <div class="alert alert-success" style="margin-bottom: 20px;">
+                                <span><strong>وصلت بيانات الحساب!</strong> يرجى فحص الحساب الآن بشكل دقيق، وتغيير الإيميل والرقم السري، وتفعيل التحقق الثنائي لحماية الحساب.</span>
+                            </div>
+
+                            <h4 style="font-weight: 700; color: var(--accent); margin-bottom: 5px;">🔑 معلومات الحساب المستلمة:</h4>
+                            <div class="credentials-box">{{ order.credentials }}</div>
+
+                            <p style="color: var(--text-secondary); font-size: 14px; margin-bottom: 20px;">بعد تأمين الحساب، اضغط على تأكيد الاستلام لتحرير الأموال للبائع. إذا كانت البيانات خاطئة أو واجهت مشكلة، ارفع نزاعاً فوراً.</p>
+
+                            <div style="display: flex; gap: 15px;">
+                                <form method="POST" style="flex: 2;">
+                                    <input type="hidden" name="action" value="confirm_receipt">
+                                    <button type="submit" class="btn btn-primary" style="width: 100%;">تأكيد استلام الحساب والرضا ✅</button>
+                                </form>
+                                <form method="POST" style="flex: 1;">
+                                    <input type="hidden" name="action" value="raise_dispute">
+                                    <button type="submit" class="btn btn-danger" style="width: 100%; font-size: 14px;">رفع نزاع ⚠️</button>
+                                </form>
+                            </div>
+                        {% else %}
+                            <div class="alert alert-info">
+                                <span><strong>تم تسليم البيانات للمشتري 📬:</strong> المشتري يقوم حالياً بالدخول للحساب وتأمين معلوماته. بمجرد انتهائه وتأكيده للاستلام، سيصل المبلغ إلى محفظتك مباشرة.</span>
+                            </div>
+                        {% endif %}
+
+                    <!-- 4. مكتمل -->
+                    {% elif order.status == 'Completed' %}
+                        <div class="alert alert-success">
+                            <span><strong>معاملة مكتملة بنجاح 🎉:</strong> تم الانتهاء من عملية الوساطة. استلم المشتري حسابه بنجاح، واستلم البائع رصيده فوراً. شكراً لاستخدامكم منصة وسيط!</span>
+                        </div>
+
+                    <!-- 5. تحت النزاع -->
+                    {% elif order.status == 'Disputed' %}
+                        <div class="alert alert-danger" style="margin-bottom: 20px;">
+                            <span><strong>معاملة متنازع عليها ⚠️:</strong> تم رفع النزاع للوسيط. يرجى توضيح المشكلة وإرفاق الأدلة والصور (روابط) في الشات الجانبي. سيقوم المشرف بالتدخل وحل النزاع قريباً.</span>
+                        </div>
+                        
+                        {% if order.credentials and user.name == order.buyer_name %}
+                            <h4 style="font-weight: 700; color: var(--accent); margin-bottom: 5px;">🔑 معلومات الحساب المسلمة (للمراجعة):</h4>
+                            <div class="credentials-box">{{ order.credentials }}</div>
+                        {% endif %}
+
+                    <!-- 6. مسترجع -->
+                    {% elif order.status == 'Refunded' %}
+                        <div class="alert alert-danger">
+                            <span><strong>طلب ملغي ومسترجع 🚫:</strong> قام الوسيط بإلغاء هذه المعاملة وإرجاع كامل الأموال إلى محفظة المشتري نظراً لعدم الاتفاق أو ثبوت مشكلة في الحساب.</span>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- عمود شات الصفقة والوساطة الخاص -->
+            <div>
+                <div class="chat-container">
+                    <h3 style="font-size: 18px; font-weight: 800; border-bottom: 1px solid var(--border-color); padding-bottom: 12px; margin-bottom: 15px; display: flex; align-items: center; justify-content: space-between;">
+                        <span>💬 شات الوساطة الخاص</span>
+                        <span class="badge badge-success" style="font-size: 11px;">مؤمن بالكامل</span>
+                    </h3>
+
+                    <!-- رسائل الشات -->
+                    <div class="chat-messages" id="chatMessages">
+                        {% for msg in messages %}
+                            {% set bubble_class = 'bubble-buyer' %}
+                            {% if msg.sender == order.seller_name %}
+                                {% set bubble_class = 'bubble-seller' %}
+                            {% endif %}
+                            {% if msg.sender == 'admin' %}
+                                {% set bubble_class = 'bubble-admin' %}
+                            {% endif %}
+                            
+                            <div class="chat-bubble {{ bubble_class }}">
+                                <span class="chat-bubble-sender">
+                                    {{ msg.sender }}
+                                    {% if msg.sender == order.buyer_name %}(المشتري){% endif %}
+                                    {% if msg.sender == order.seller_name %}(البائع){% endif %}
+                                    {% if msg.sender == 'admin' %}(الوسيط 🛡️){% endif %}
+                                </span>
+                                <div>{{ msg.content }}</div>
+                                <span class="chat-time">{{ msg.time.strftime('%H:%M') }}</span>
+                            </div>
+                        {% else %}
+                            <p style="text-align: center; color: var(--text-muted); font-size: 13px; margin: auto 0;">لا توجد رسائل في شات المعاملة حالياً. ابدأ النقاش أو تواصل مع الطرف الآخر!</p>
+                        {% endfor %}
+                    </div>
+
+                    <!-- إرسال رسالة -->
+                    <form method="POST" class="chat-form">
+                        <input type="hidden" name="action" value="send_message">
+                        <input type="text" name="content" class="chat-input" placeholder="اكتب رسالة للطرف الآخر أو للوسيط..." required autocomplete="off">
+                        <button type="submit" class="btn btn-primary btn-sm" style="padding: 10px 18px;">إرسال</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <p>جميع الحقوق محفوظة © 2026 لـ منصة <span>وسيط</span> لبيع الحسابات بأمان.</p>
+    </footer>
+
+    <!-- سكريبت لجعل الشات ينزل لآخر رسالة تلقائياً -->
+    <script>
+        const chatMessages = document.getElementById('chatMessages');
+        if (chatMessages) {
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+    </script>
+
+</body>
+</html>
