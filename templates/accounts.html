@@ -60,7 +60,7 @@
       <p>{{ account.description }}</p>
       <p class="price">{{ account.price }} ريال</p>
       <p class="seller">البائع: {{ account.seller }}</p>
-      <a href="#" class="btn">تواصل مع البائع</a>
+      <a href="/chat/{{ account.id }}" class="btn">تواصل مع البائع</a>
     </div>
     {% else %}
     <p style="text-align:center; color:#888;">لا يوجد حسابات معروضة حالياً</p>

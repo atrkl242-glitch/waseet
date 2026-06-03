@@ -27,6 +27,13 @@ class Account(db.Model):
     description = db.Column(db.String(500))
     price = db.Column(db.Float)
     seller = db.Column(db.String(100))
+    class Message(db.Model):
+     id = db.Column(db.Integer, primary_key=True)
+    account_id = db.Column(db.Integer)
+    sender = db.Column(db.String(100))
+    receiver = db.Column(db.String(100))
+    content = db.Column(db.String(500))
+    time = db.Column(db.DateTime, default=db.func.now())
 
 with app.app_context():
     db.create_all()
@@ -87,6 +94,23 @@ def sell():
         db.session.commit()
         return redirect('/accounts')
     return render_template('sell.html')
+@app.route('/chat/<int:account_id>', methods=['GET', 'POST'])
+def chat(account_id):
+    if 'user' not in session:
+        return redirect('/login')
+    account = Account.query.get(account_id)
+    if request.method == 'POST':
+        content = request.form['content']
+        msg = Message(
+            account_id=account_id,
+            sender=session['user'],
+            receiver=account.seller,
+            content=content
+        )
+        db.session.add(msg)
+        db.session.commit()
+    messages = Message.query.filter_by(account_id=account_id).all()
+    return render_template('chat.html', account=account, messages=messages)
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
