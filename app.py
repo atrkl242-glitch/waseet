@@ -6,6 +6,9 @@ app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///waseet.db'
 app.secret_key = os.environ.get('SECRET_KEY', 'waseet123')
 db = SQLAlchemy(app)
+app.config['SESSION_COOKIE_SECURE'] = False
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
