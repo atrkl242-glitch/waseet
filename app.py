@@ -27,9 +27,11 @@ class Account(db.Model):
     description = db.Column(db.String(500))
     price = db.Column(db.Float)
     seller = db.Column(db.String(100))
+    
     class Message(db.Model):
      id = db.Column(db.Integer, primary_key=True)
-    account_id = db.Column(db.Integer)
+     
+     account_id = db.Column(db.Integer)
     sender = db.Column(db.String(100))
     receiver = db.Column(db.String(100))
     content = db.Column(db.String(500))
