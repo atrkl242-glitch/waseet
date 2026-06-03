@@ -30,10 +30,9 @@ class Message(db.Model):
     content = db.Column(db.String(500))
     time = db.Column(db.DateTime, default=db.func.now())
 
-# هذا الجزء يقوم بمسح وإعادة إنشاء الجداول لضمان التحديث
 with app.app_context():
-    db.drop_all()
-    db.create_all()
+    db.drop_all()  # لتنظيف الجداول المكسورة على السيرفر
+    db.create_all() # لإعادة بناء جدول الرسائل الجديد بشكل سليم
 
 @app.route('/')
 def home():

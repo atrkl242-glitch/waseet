@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <title>وسيط - المحادثة</title>
+    <style>
+        body { background: #0f0f0f; color: white; font-family: Arial, sans-serif; padding: 40px 20px; max-width: 700px; margin: 0 auto; }
+        h1 { color: #00ff88; }
+        .back { color: #00ff88; text-decoration: none; display: block; margin-bottom: 20px; }
+        .msg-box { background: #1a1a1a; border: 1px solid #00ff88; border-radius: 10px; padding: 15px; margin-bottom: 10px; min-height: 100px; }
+        .msg-sender { color: #00ff88; font-weight: bold; margin-bottom: 5px; }
+        .msg-content { color: #ccc; }
+        textarea { width: 100%; background: #1a1a1a; border: 1px solid #00ff88; border-radius: 8px; padding: 12px; color: white; font-size: 16px; margin-top: 20px; resize: none; box-sizing: border-box; }
+        button { margin-top: 10px; background: #00ff88; color: black; border: none; padding: 12px 30px; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <a href="/accounts" class="back">← الحسابات</a>
+    {% if account %}
+        <h1>محادثة - {{ account.game }}</h1>
+        <p style="color: #888;">البائع: {{ account.seller }}</p>
+    {% else %}
+        <h1>محادثة جديدة</h1>
+    {% endif %}
+    <div class="msg-box">
+        {% for msg in messages %}
+            <div style="margin-bottom: 15px; border-bottom: 1px solid #333; padding-bottom: 10px;">
+                <div class="msg-sender">{{ msg.sender }}</div>
+                <div class="msg-content">{{ msg.content }}</div>
+            </div>
+        {% else %}
+            <p style="color: #888;">لا توجد رسائل بعد - ابدأ المحادثة!</p>
+        {% endfor %}
+    </div>
+    <form method="POST">
+        <textarea name="content" rows="3" placeholder="اكتب رسالتك هنا..." required></textarea>
+        <button type="submit">إرسال</button>
+    </form>
+</body>
+</html>
