@@ -1,17 +1,18 @@
 import os
 from flask import Flask, render_template, request, redirect, session
+from flask_bcrypt import Bcrypt
+from flask_sqlalchemy import SQLAlchemy
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'waseet123')
+bcrypt = Bcrypt(app)
 
-# إعدادات Session
 app.config['SESSION_COOKIE_SECURE'] = False
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
-app.config['PERMANENT_SESSION_LIFETIME'] = 86400  # يوم كامل
-
-from flask_sqlalchemy import SQLAlchemy
+app.config['PERMANENT_SESSION_LIFETIME'] = 86400
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///waseet.db')
+
 db = SQLAlchemy(app)
 
 class User(db.Model):
@@ -40,10 +41,11 @@ def register():
         name = request.form['name']
         email = request.form['email']
         password = request.form['password']
-        user = User(name=name, email=email, password=password)
+        hashed = bcrypt.generate_password_hash(password).decode('utf-8')
+        user = User(name=name, email=email, password=hashed)
         db.session.add(user)
         db.session.commit()
-        session.permanent = True      # ← المهم
+        session.permanent = True
         session['user'] = user.name
         return redirect('/')
     return render_template('register.html')
@@ -53,9 +55,9 @@ def login():
     if request.method == 'POST':
         email = request.form['email']
         password = request.form['password']
-        user = User.query.filter_by(email=email, password=password).first()
-        if user:
-            session.permanent = True  # ← المهم
+        user = User.query.filter_by(email=email).first()
+        if user and bcrypt.check_password_hash(user.password, password):
+            session.permanent = True
             session['user'] = user.name
             return redirect('/')
         return render_template('login.html', error='بيانات خاطئة')
