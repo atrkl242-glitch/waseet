@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>تفاصيل عملية الوساطة - وسيط</title>
+    <!-- FontAwesome for Premium Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}">
     <style>
         .order-layout {
@@ -11,17 +13,20 @@
             grid-template-columns: 3fr 2fr;
             gap: 30px;
         }
-        @media (max-width: 900px) {
+        @media (max-width: 950px) {
             .order-layout {
                 grid-template-columns: 1fr;
             }
         }
         .order-workspace {
             background-color: var(--bg-card);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
             border: 1px solid var(--border-color);
-            border-radius: 20px;
+            border-radius: 24px;
             padding: 30px;
             margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
         }
         .credentials-box {
             background: rgba(0, 240, 255, 0.05);
@@ -35,123 +40,228 @@
             text-align: left;
             direction: ltr;
             white-space: pre-wrap;
+            box-shadow: 0 0 15px rgba(0, 240, 255, 0.08);
+            position: relative;
+        }
+        /* Timer Styles */
+        .timer-container {
+            background: linear-gradient(135deg, rgba(255, 145, 0, 0.1), rgba(255, 23, 68, 0.05));
+            border: 1px solid rgba(255, 145, 0, 0.3);
+            border-radius: 16px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        .timer-display {
+            font-size: 48px;
+            font-weight: 900;
+            font-family: monospace;
+            color: #ffab00;
+            text-shadow: 0 0 20px rgba(255, 171, 0, 0.3);
+            direction: ltr;
+        }
+        .timer-label {
+            font-size: 14px;
+            color: var(--text-secondary);
+            font-weight: 700;
+            margin-top: 8px;
+        }
+        .timer-warning {
+            color: #ff5252;
+            animation: pulse 1s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        /* Evidence Styles */
+        .evidence-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 18px;
+            margin: 12px 0;
+        }
+        .evidence-image {
+            max-width: 100%;
+            border-radius: 12px;
+            margin-top: 12px;
+            border: 1px solid var(--border-color);
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+        .evidence-image:hover {
+            transform: scale(1.02);
+        }
+        .evidence-text {
+            background: rgba(7, 8, 10, 0.4);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 15px;
+            color: #e2e8f0;
+            line-height: 1.8;
+            font-weight: 600;
+            margin-top: 10px;
         }
         /* Chat Box */
         .chat-container {
             background-color: var(--bg-card);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
             border: 1px solid var(--border-color);
-            border-radius: 20px;
+            border-radius: 24px;
             padding: 25px;
             display: flex;
             flex-direction: column;
-            height: 550px;
+            height: 580px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
         }
         .chat-messages {
             flex: 1;
             overflow-y: auto;
             display: flex;
             flex-direction: column;
-            gap: 12px;
+            gap: 14px;
             padding-bottom: 15px;
-            padding-left: 5px;
-            padding-right: 5px;
+            padding-left: 8px;
+            padding-right: 8px;
         }
         .chat-bubble {
-            max-width: 80%;
-            padding: 10px 16px;
-            border-radius: 14px;
-            font-size: 14px;
-            line-height: 1.5;
+            max-width: 85%;
+            padding: 12px 18px;
+            border-radius: 18px;
+            font-size: 14.5px;
+            line-height: 1.6;
             position: relative;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+            animation: slideIn 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28);
         }
         .chat-bubble-sender {
             font-size: 11px;
             font-weight: 800;
-            margin-bottom: 4px;
-            display: block;
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
         }
         .chat-time {
             font-size: 9px;
             color: var(--text-muted);
-            margin-top: 5px;
+            margin-top: 6px;
             text-align: left;
             display: block;
+            font-weight: 700;
         }
         .bubble-buyer {
             align-self: flex-start;
-            background-color: rgba(0, 255, 136, 0.08);
-            border: 1px solid rgba(0, 255, 136, 0.2);
-            color: white;
-            border-top-right-radius: 2px;
+            background-color: rgba(0, 255, 157, 0.06);
+            border: 1px solid rgba(0, 255, 157, 0.15);
+            color: #e2e8f0;
+            border-top-right-radius: 4px;
         }
         .bubble-buyer .chat-bubble-sender {
             color: var(--primary);
         }
         .bubble-seller {
             align-self: flex-end;
-            background-color: rgba(112, 0, 255, 0.08);
-            border: 1px solid rgba(112, 0, 255, 0.2);
-            color: white;
-            border-top-left-radius: 2px;
+            background-color: rgba(126, 63, 242, 0.08);
+            border: 1px solid rgba(126, 63, 242, 0.18);
+            color: #e2e8f0;
+            border-top-left-radius: 4px;
         }
         .bubble-seller .chat-bubble-sender {
             color: #b76eff;
         }
         .bubble-admin {
             align-self: center;
-            background: linear-gradient(135deg, rgba(237, 137, 54, 0.15), rgba(245, 101, 101, 0.15));
-            border: 1px solid var(--warning);
+            background: linear-gradient(135deg, rgba(255, 145, 0, 0.12), rgba(255, 23, 68, 0.12));
+            border: 1px solid var(--danger);
             color: white;
             text-align: center;
             max-width: 90%;
+            box-shadow: 0 4px 15px rgba(255, 23, 68, 0.15);
         }
         .bubble-admin .chat-bubble-sender {
-            color: var(--warning);
+            color: #ff5252;
+            justify-content: center;
         }
         .chat-form {
             display: flex;
-            gap: 10px;
+            gap: 12px;
             border-top: 1px solid var(--border-color);
-            padding-top: 15px;
+            padding-top: 18px;
         }
         .chat-input {
             flex: 1;
-            background-color: rgba(10, 11, 14, 0.7);
+            background-color: rgba(7, 8, 10, 0.6);
             border: 1px solid var(--border-color);
-            padding: 10px 15px;
-            border-radius: 8px;
+            padding: 12px 18px;
+            border-radius: 12px;
             color: white;
             outline: none;
-            font-size: 14px;
+            font-size: 14.5px;
+            font-weight: 600;
         }
         .chat-input:focus {
             border-color: var(--primary);
+            box-shadow: 0 0 10px rgba(0, 255, 157, 0.15);
+        }
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+        }
+        .modal-overlay.active {
+            display: flex;
+        }
+        .modal-image {
+            max-width: 90%;
+            max-height: 90%;
+            border-radius: 12px;
         }
     </style>
 </head>
 <body>
 
+    <!-- Modal for image preview -->
+    <div class="modal-overlay" id="imageModal" onclick="this.classList.remove('active')">
+        <img class="modal-image" id="modalImage" src="" alt="تكبير الصورة">
+    </div>
+
+    <!-- Decorative glows in background -->
+    <div class="bg-glow-bubble bg-glow-1"></div>
+    <div class="bg-glow-bubble bg-glow-2"></div>
+
     <!-- الهيدر الموحد -->
     <header class="navbar">
         <div class="container">
             <a href="/" class="logo">
-                <span>وسيط 🎮</span>
+                <span><i class="fa-solid fa-shield-halved"></i> وسيط 🎮</span>
             </a>
             <ul class="nav-links">
-                <li><a href="/" class="nav-link">الرئيسية</a></li>
-                <li><a href="/accounts" class="nav-link">الحسابات المعروضة</a></li>
-                <li><a href="/sell" class="nav-link">بيع حساب</a></li>
+                <li><a href="/" class="nav-link"><i class="fa-solid fa-house"></i> الرئيسية</a></li>
+                <li><a href="/accounts" class="nav-link"><i class="fa-solid fa-gamepad"></i> الحسابات المعروضة</a></li>
+                <li><a href="/sell" class="nav-link"><i class="fa-solid fa-tags"></i> بيع حساب</a></li>
             </ul>
             <div class="nav-user">
                 {% if current_user_obj %}
                     <a href="/dashboard" class="wallet-badge">
-                        <span>💳 الرصيد: {{ "{:,.2f}".format(current_user_obj.balance) }} ريال</span>
+                        <i class="fa-solid fa-wallet"></i>
+                        <span>الرصيد: {{ "{:,.2f}".format(current_user_obj.balance) }} ريال</span>
                     </a>
-                    <a href="/dashboard" class="nav-link" style="color: var(--primary);">حسابي ({{ current_user_obj.name }})</a>
+                    <a href="/dashboard" class="nav-link" style="color: var(--primary);"><i class="fa-solid fa-user"></i> {{ current_user_obj.name }}</a>
                     {% if current_user_obj.is_admin %}
-                        <a href="/admin/disputes" class="btn btn-accent btn-sm">لوحة الإدارة 🛡️</a>
+                        <a href="/admin/disputes" class="btn btn-accent btn-sm"><i class="fa-solid fa-user-shield"></i> لوحة الإدارة</a>
                     {% endif %}
-                    <a href="/logout" class="btn btn-secondary btn-sm">خروج</a>
+                    <a href="/logout" class="btn btn-secondary btn-sm"><i class="fa-solid fa-right-from-bracket"></i> خروج</a>
                 {% endif %}
             </div>
         </div>
@@ -173,10 +283,10 @@
     <main class="main-content container">
         <div style="margin-bottom: 30px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
             <div>
-                <h1 style="font-size: 30px; font-weight: 800;">تتبع طلب الوساطة الأمنية 🛡️</h1>
-                <p style="color: var(--text-secondary);">رقم المعاملة: <span style="color: white; font-weight: 700;">#{{ order.id }}</span> | تاريخ الطلب: {{ order.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
+                <h1 style="font-size: 30px; font-weight: 900; background: linear-gradient(135deg, white, var(--text-secondary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;"><i class="fa-solid fa-shield-halved animate-glow"></i> تتبع طلب الوساطة الأمنية</h1>
+                <p style="color: var(--text-secondary); font-weight: 700; margin-top: 5px;">رقم المعاملة: <span style="color: var(--primary); font-weight: 800;">#{{ order.id }}</span> | تاريخ الطلب: {{ order.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
             </div>
-            <a href="/dashboard" class="btn btn-secondary btn-sm">← لوحة التحكم</a>
+            <a href="/dashboard" class="btn btn-secondary btn-sm"><i class="fa-solid fa-arrow-right"></i> لوحة التحكم</a>
         </div>
 
         <!-- شريط التقدم لحالة الطلب -->
@@ -194,22 +304,22 @@
             <div class="tracker-progress" style="width: {{ progress }}%;"></div>
             
             <div class="status-step {% if progress >= 0 %}completed{% endif %} {% if order.status == 'Pending_Payment' %}active{% endif %}">
-                <div class="step-bubble">1</div>
+                <div class="step-bubble"><i class="fa-solid fa-file-invoice-dollar"></i></div>
                 <div class="step-label">طلب الوساطة</div>
             </div>
             
             <div class="status-step {% if progress >= 33 %}completed{% endif %} {% if order.status == 'Funds_Held' %}active{% endif %}">
-                <div class="step-bubble">2</div>
+                <div class="step-bubble"><i class="fa-solid fa-vault"></i></div>
                 <div class="step-label">حجز الأموال</div>
             </div>
             
             <div class="status-step {% if progress >= 66 %}completed{% endif %} {% if order.status == 'Credentials_Submitted' %}active{% endif %}">
-                <div class="step-bubble">3</div>
+                <div class="step-bubble"><i class="fa-solid fa-key"></i></div>
                 <div class="step-label">تسليم الحساب</div>
             </div>
             
             <div class="status-step {% if progress >= 100 %}completed{% endif %} {% if order.status == 'Completed' %}active{% endif %}">
-                <div class="step-bubble">4</div>
+                <div class="step-bubble"><i class="fa-solid fa-circle-check"></i></div>
                 <div class="step-label">اكتمال وتأكيد</div>
             </div>
         </div>
@@ -218,33 +328,33 @@
             <!-- مساحة العمل التفاعلية للوساطة -->
             <div>
                 <!-- تفاصيل الحساب الأساسية -->
-                <div class="order-workspace" style="margin-bottom: 25px; border-bottom: 3px solid var(--primary);">
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 15px;">
-                        <h3 style="font-size: 22px; font-weight: 800; color: white;">🎮 تفاصيل السلعة المعروضة</h3>
-                        <span class="badge badge-info">{{ order.account.platform }}</span>
+                <div class="order-workspace" style="margin-bottom: 25px; border-top: 4px solid var(--primary);">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 18px; align-items: center;">
+                        <h3 style="font-size: 20px; font-weight: 900; color: white;"><i class="fa-solid fa-box-open"></i> تفاصيل السلعة المعروضة</h3>
+                        <span class="badge badge-info"><i class="fa-solid fa-laptop"></i> {{ order.account.platform }}</span>
                     </div>
-                    <p style="font-size: 17px; font-weight: 700; color: var(--primary); margin-bottom: 10px;">{{ order.account.game }}</p>
-                    <p style="color: var(--text-secondary); line-height: 1.6; margin-bottom: 15px;">{{ order.account.description }}</p>
-                    <div style="font-size: 20px; font-weight: 800; color: var(--primary);">
-                        القيمة المتفق عليها: {{ "{:,.0f}".format(order.price) }} ريال سعودي
+                    <p style="font-size: 18px; font-weight: 800; color: var(--primary); margin-bottom: 12px;">{{ order.account.game }}</p>
+                    <p style="color: var(--text-secondary); line-height: 1.7; margin-bottom: 18px; font-weight: 600;">{{ order.account.description }}</p>
+                    <div style="font-size: 20px; font-weight: 900; color: var(--primary); background: rgba(0, 255, 157, 0.04); display: inline-block; padding: 6px 16px; border-radius: 10px; border: 1px solid rgba(0, 255, 157, 0.15);">
+                        <i class="fa-solid fa-tags"></i> القيمة المتفق عليها: {{ "{:,.0f}".format(order.price) }} ريال سعودي
                     </div>
                 </div>
 
                 <!-- مساحة الإجراءات التفاعلية حسب الحالة -->
                 <div class="order-workspace">
-                    <h3 style="font-size: 20px; font-weight: 800; margin-bottom: 20px;">⚡ إجراءات المعاملة الحالية</h3>
+                    <h3 style="font-size: 20px; font-weight: 900; margin-bottom: 22px; color: white;"><i class="fa-solid fa-gears"></i> إجراءات المعاملة الحالية</h3>
 
                     <!-- 1. بانتظار الدفع -->
                     {% if order.status == 'Pending_Payment' %}
                         {% if user.name == order.buyer_name %}
-                            <div class="alert alert-warning" style="margin-bottom: 20px;">
+                            <div class="alert alert-warning" style="margin-bottom: 22px;">
                                 <span><strong>تنبيه للمشتري:</strong> يرجى دفع قيمة الحساب ليتسنى للوسيط حجزها وإبلاغ البائع بإدخال بيانات الحساب.</span>
                             </div>
-                            <p style="margin-bottom: 20px; color: var(--text-secondary);">قيمة الطلب: <strong>{{ order.price }} ريال</strong> | رصيدك المتاح: <strong>{{ user.balance }} ريال</strong></p>
+                            <p style="margin-bottom: 22px; color: var(--text-secondary); font-weight: 700;">قيمة الطلب: <strong style="color: var(--primary); font-size: 18px;">{{ order.price }} ريال</strong> | رصيدك المتاح: <strong style="color: white; font-size: 18px;">{{ user.balance }} ريال</strong></p>
                             
                             <form method="POST">
                                 <input type="hidden" name="action" value="pay">
-                                <button type="submit" class="btn btn-primary" style="width: 100%;">💳 دفع قيمة الحساب وتعليقها بالوساطة</button>
+                                <button type="submit" class="btn btn-primary" style="width: 100%;"><i class="fa-solid fa-credit-card"></i> دفع قيمة الحساب وتعليقها بالوساطة</button>
                             </form>
                         {% else %}
                             <div class="alert alert-info">
@@ -255,20 +365,20 @@
                     <!-- 2. تم حجز الأموال في الوساطة وبانتظار بيانات البائع -->
                     {% elif order.status == 'Funds_Held' %}
                         {% if user.name == order.seller_name %}
-                            <div class="alert alert-success" style="margin-bottom: 20px;">
+                            <div class="alert alert-success" style="margin-bottom: 22px;">
                                 <span><strong>وصلت الأموال للوسيط!</strong> يرجى تزويد المشتري ببيانات الدخول للحساب والبريد الإلكتروني المربوط وأي معلومات أخرى هنا.</span>
                             </div>
                             
                             <form method="POST">
                                 <input type="hidden" name="action" value="submit_credentials">
                                 <div class="form-group">
-                                    <label class="form-label" for="credentials">بيانات الحساب السرية للتسليم</label>
+                                    <label class="form-label" for="credentials"><i class="fa-solid fa-key"></i> بيانات الحساب السرية للتسليم</label>
                                     <textarea class="form-input" id="credentials" name="credentials" placeholder="اكتب هنا معلومات الحساب، مثل:
 اسم المستخدم: test@mail.com
 كلمة المرور: password123
-رمز التحقق أو الايميل البديل إن وجد..." required style="height: 120px; font-family: monospace; text-align: right;"></textarea>
+رمز التحقق أو الايميل البديل إن وجد..." required style="height: 140px; font-family: monospace; text-align: right;"></textarea>
                                 </div>
-                                <button type="submit" class="btn btn-primary" style="width: 100%;">🚀 تسليم معلومات الحساب للمشتري</button>
+                                <button type="submit" class="btn btn-primary" style="width: 100%;"><i class="fa-solid fa-paper-plane"></i> تسليم معلومات الحساب للمشتري</button>
                             </form>
                         {% else %}
                             <div class="alert alert-info">
@@ -276,50 +386,225 @@
                             </div>
                         {% endif %}
 
-                    <!-- 3. تم تسليم البيانات وفحص المشتري -->
+                    <!-- 3. تم تسليم البيانات وفحص المشتري (مع التايمر) -->
                     {% elif order.status == 'Credentials_Submitted' %}
                         {% if user.name == order.buyer_name %}
-                            <div class="alert alert-success" style="margin-bottom: 20px;">
+                            <div class="alert alert-success" style="margin-bottom: 22px;">
                                 <span><strong>وصلت بيانات الحساب!</strong> يرجى فحص الحساب الآن بشكل دقيق، وتغيير الإيميل والرقم السري، وتفعيل التحقق الثنائي لحماية الحساب.</span>
                             </div>
 
-                            <h4 style="font-weight: 700; color: var(--accent); margin-bottom: 5px;">🔑 معلومات الحساب المستلمة:</h4>
-                            <div class="credentials-box">{{ order.credentials }}</div>
+                            <!-- تايمر العد التنازلي 2 ساعة -->
+                            <div class="timer-container" id="timerContainer" data-seconds="{{ remaining_seconds }}">
+                                <div class="timer-display" id="timerDisplay">02:00:00</div>
+                                <div class="timer-label">
+                                    <i class="fa-solid fa-hourglass-half"></i>
+                                    الوقت المتبقي لتأكيد الاستلام قبل تحرير المبلغ تلقائياً للبائع
+                                </div>
+                                <div style="margin-top: 12px; font-size: 12px; color: var(--text-muted); font-weight: 600;">
+                                    <i class="fa-solid fa-info-circle"></i> إذا لم تؤكد الاستلام خلال ساعتين، سيتم تحرير المبلغ تلقائياً للبائع
+                                </div>
+                            </div>
 
-                            <p style="color: var(--text-secondary); font-size: 14px; margin-bottom: 20px;">بعد تأمين الحساب، اضغط على تأكيد الاستلام لتحرير الأموال للبائع. إذا كانت البيانات خاطئة أو واجهت مشكلة، ارفع نزاعاً فوراً.</p>
+                            <h4 style="font-weight: 800; color: var(--accent); margin-bottom: 8px;"><i class="fa-solid fa-lock-open"></i> معلومات الحساب المستلمة:</h4>
+                            <div class="credentials-box">
+                                <i class="fa-solid fa-shield-halved" style="position: absolute; left: 15px; top: 15px; font-size: 24px; color: rgba(0, 240, 255, 0.25);"></i>
+                                {{ order.credentials }}
+                            </div>
 
-                            <div style="display: flex; gap: 15px;">
-                                <form method="POST" style="flex: 2;">
+                            <p style="color: var(--text-secondary); font-size: 14px; margin-bottom: 22px; font-weight: 600;">بعد تأمين الحساب، اضغط على تأكيد الاستلام لتحرير الأموال للبائع. إذا كانت البيانات خاطئة أو واجهت مشكلة، ارفع نزاعاً فوراً.</p>
+
+                            <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+                                <form method="POST" style="flex: 2; min-width: 200px;">
                                     <input type="hidden" name="action" value="confirm_receipt">
-                                    <button type="submit" class="btn btn-primary" style="width: 100%;">تأكيد استلام الحساب والرضا ✅</button>
+                                    <button type="submit" class="btn btn-primary" style="width: 100%;"><i class="fa-solid fa-circle-check"></i> تأكيد استلام الحساب والرضا</button>
                                 </form>
-                                <form method="POST" style="flex: 1;">
+                                <button type="button" class="btn btn-danger" style="flex: 1; min-width: 120px; font-size: 14px;" onclick="document.getElementById('disputeForm').style.display='block'; this.style.display='none';">
+                                    <i class="fa-solid fa-triangle-exclamation"></i> رفع نزاع مع أدلة
+                                </button>
+                            </div>
+
+                            <!-- نموذج رفع النزاع مع إرفاق الأدلة -->
+                            <div id="disputeForm" style="display: none; margin-top: 20px; background: rgba(255, 23, 68, 0.03); border: 1px solid rgba(255, 23, 68, 0.2); border-radius: 16px; padding: 20px;">
+                                <h4 style="font-weight: 800; color: #ff5252; margin-bottom: 15px;"><i class="fa-solid fa-file-lines"></i> رفع نزاع مع إرفاق أدلة</h4>
+                                <p style="color: var(--text-secondary); font-size: 13px; margin-bottom: 15px; font-weight: 600;">قم بإرفاق شرح مفصل للمشكلة وصورة دليل (رابط) لإثبات صحة كلامك. المشرف سيراجع الأدلة ويتخذ القرار المناسب.</p>
+                                
+                                <form method="POST">
                                     <input type="hidden" name="action" value="raise_dispute">
-                                    <button type="submit" class="btn btn-danger" style="width: 100%; font-size: 14px;">رفع نزاع ⚠️</button>
+                                    
+                                    <div class="form-group">
+                                        <label class="form-label" for="dispute_text"><i class="fa-solid fa-pen"></i> شرح المشكلة بالتفصيل (دليل نصي)</label>
+                                        <textarea class="form-input" id="dispute_text" name="dispute_text" placeholder="اكتب هنا شرحاً مفصلاً للمشكلة التي واجهتها مع الحساب أو البائع..." style="height: 120px;"></textarea>
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <label class="form-label" for="dispute_image"><i class="fa-solid fa-image"></i> رابط صورة كمثال أو دليل (اختياري)</label>
+                                        <input type="url" class="form-input" id="dispute_image" name="dispute_image" placeholder="https://example.com/screenshot.png" style="text-align: right;">
+                                    </div>
+                                    
+                                    <button type="submit" class="btn btn-danger" style="width: 100%;"><i class="fa-solid fa-gavel"></i> تأكيد رفع النزاع مع الأدلة</button>
                                 </form>
                             </div>
                         {% else %}
                             <div class="alert alert-info">
                                 <span><strong>تم تسليم البيانات للمشتري 📬:</strong> المشتري يقوم حالياً بالدخول للحساب وتأمين معلوماته. بمجرد انتهائه وتأكيده للاستلام، سيصل المبلغ إلى محفظتك مباشرة.</span>
                             </div>
+                            
+                            <!-- عرض التايمر للبائع أيضاً -->
+                            <div class="timer-container" id="timerContainer" data-seconds="{{ remaining_seconds }}">
+                                <div class="timer-display" id="timerDisplay">02:00:00</div>
+                                <div class="timer-label">
+                                    <i class="fa-solid fa-hourglass-half"></i>
+                                    الوقت المتبقي للمشتري لتأكيد الاستلام - بعدها سيتم تحرير المبلغ لك تلقائياً
+                                </div>
+                            </div>
                         {% endif %}
 
                     <!-- 4. مكتمل -->
                     {% elif order.status == 'Completed' %}
-                        <div class="alert alert-success">
+                        <div class="alert alert-success" style="margin-bottom: 22px;">
                             <span><strong>معاملة مكتملة بنجاح 🎉:</strong> تم الانتهاء من عملية الوساطة. استلم المشتري حسابه بنجاح، واستلم البائع رصيده فوراً. شكراً لاستخدامكم منصة وسيط!</span>
                         </div>
 
+                        <!-- قسم تقييم الصفقة والتقييمات -->
+                        {% if user.name == order.buyer_name %}
+                            {% if not order_review %}
+                                <div style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-color); padding: 25px; border-radius: 16px; margin-top: 20px; text-align: right;">
+                                    <h4 style="font-weight: 800; color: white; margin-bottom: 15px;"><i class="fa-solid fa-star"></i> قيم تجربتك مع البائع ({{ order.seller_name }})</h4>
+                                    
+                                    <form method="POST">
+                                        <input type="hidden" name="action" value="submit_review">
+                                        
+                                        <div class="form-group" style="text-align: right; margin-bottom: 15px;">
+                                            <label class="form-label">التقييم بالنجوم:</label>
+                                            <div style="display: flex; gap: 8px; flex-direction: row-reverse; justify-content: flex-end;">
+                                                <input type="radio" id="star5" name="rating" value="5" style="display: none;" checked>
+                                                <label for="star5" style="font-size: 24px; color: var(--warning); cursor: pointer;" onclick="setRating(5)"><i class="fa-solid fa-star" id="r-star5"></i></label>
+                                                
+                                                <input type="radio" id="star4" name="rating" value="4" style="display: none;">
+                                                <label for="star4" style="font-size: 24px; color: var(--warning); cursor: pointer;" onclick="setRating(4)"><i class="fa-solid fa-star" id="r-star4"></i></label>
+                                                
+                                                <input type="radio" id="star3" name="rating" value="3" style="display: none;">
+                                                <label for="star3" style="font-size: 24px; color: var(--warning); cursor: pointer;" onclick="setRating(3)"><i class="fa-solid fa-star" id="r-star3"></i></label>
+                                                
+                                                <input type="radio" id="star2" name="rating" value="2" style="display: none;">
+                                                <label for="star2" style="font-size: 24px; color: var(--warning); cursor: pointer;" onclick="setRating(2)"><i class="fa-solid fa-star" id="r-star2"></i></label>
+                                                
+                                                <input type="radio" id="star1" name="rating" value="1" style="display: none;">
+                                                <label for="star1" style="font-size: 24px; color: var(--warning); cursor: pointer;" onclick="setRating(1)"><i class="fa-solid fa-star" id="r-star1"></i></label>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="form-group">
+                                            <label class="form-label" for="comment">رأيك وملاحظاتك حول الخدمة (اختياري)</label>
+                                            <textarea class="form-input" id="comment" name="comment" placeholder="مثال: بائع سريع التجاوب والبيانات صحيحة تماماً..." style="height: 80px;"></textarea>
+                                        </div>
+                                        
+                                        <button type="submit" class="btn btn-primary btn-sm"><i class="fa-solid fa-paper-plane"></i> إرسال التقييم للبائع</button>
+                                    </form>
+                                </div>
+                                
+                                <script>
+                                    function setRating(val) {
+                                        for(let i=1; i<=5; i++) {
+                                            const star = document.getElementById('r-star' + i);
+                                            if (i <= val) {
+                                                star.className = "fa-solid fa-star";
+                                                star.style.color = "var(--warning)";
+                                            } else {
+                                                star.className = "fa-regular fa-star";
+                                                star.style.color = "var(--text-muted)";
+                                            }
+                                        }
+                                        document.getElementById('star' + val).checked = true;
+                                    }
+                                    document.addEventListener("DOMContentLoaded", function() {
+                                        setRating(5);
+                                    });
+                                </script>
+                            {% else %}
+                                <div style="background: rgba(0, 255, 157, 0.03); border: 1px solid rgba(0, 255, 157, 0.15); padding: 20px; border-radius: 16px; margin-top: 20px; text-align: right;">
+                                    <h4 style="font-weight: 800; color: white; margin-bottom: 8px;"><i class="fa-solid fa-circle-check" style="color: var(--primary);"></i> تقييمك للبائع مرسل بنجاح</h4>
+                                    <div style="display: flex; gap: 4px; margin-bottom: 8px; color: var(--warning);">
+                                        {% for i in range(order_review.rating) %}
+                                            <i class="fa-solid fa-star"></i>
+                                        {% endfor %}
+                                        {% for i in range(5 - order_review.rating) %}
+                                            <i class="fa-regular fa-star" style="color: var(--text-muted);"></i>
+                                        {% endfor %}
+                                    </div>
+                                    <p style="color: var(--text-secondary); font-size: 13.5px; font-weight: 600;">" {{ order_review.comment or 'لا يوجد تعليق مكتوب.' }} "</p>
+                                </div>
+                            {% endif %}
+                        {% endif %}
+
                     <!-- 5. تحت النزاع -->
                     {% elif order.status == 'Disputed' %}
-                        <div class="alert alert-danger" style="margin-bottom: 20px;">
-                            <span><strong>معاملة متنازع عليها ⚠️:</strong> تم رفع النزاع للوسيط. يرجى توضيح المشكلة وإرفاق الأدلة والصور (روابط) في الشات الجانبي. سيقوم المشرف بالتدخل وحل النزاع قريباً.</span>
+                        <div class="alert alert-danger" style="margin-bottom: 22px;">
+                            <span><strong>معاملة متنازع عليها ⚠️:</strong> تم رفع النزاع للوسيط. جميع الأدلة المرفوعة ستتم مراجعتها من قبل المشرف. سيتم حل النزاع قريباً.</span>
                         </div>
+
+                        <!-- عرض أدلة النزاع -->
+                        <h4 style="font-weight: 800; color: #ff5252; margin-bottom: 12px;"><i class="fa-solid fa-folder-open"></i> أدلة النزاع المرفوعة</h4>
                         
+                        {% for evidence in dispute_evidences %}
+                            <div class="evidence-card">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                    <span style="font-size: 12px; color: var(--text-muted); font-weight: 700;">
+                                        <i class="fa-solid fa-user"></i> {{ evidence.uploaded_by }}
+                                        {% if evidence.uploaded_by == order.buyer_name %}
+                                            <span style="color: var(--primary);">(المشتري)</span>
+                                        {% elif evidence.uploaded_by == order.seller_name %}
+                                            <span style="color: #b76eff;">(البائع)</span>
+                                        {% elif evidence.uploaded_by == 'admin' %}
+                                            <span style="color: #ff5252;">(المشرف)</span>
+                                        {% endif %}
+                                    </span>
+                                    <span style="font-size: 10px; color: var(--text-muted);">{{ evidence.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
+                                </div>
+                                
+                                {% if evidence.text_content %}
+                                    <div class="evidence-text">
+                                        <i class="fa-solid fa-quote-right" style="color: var(--text-muted); margin-left: 8px;"></i>
+                                        {{ evidence.text_content }}
+                                    </div>
+                                {% endif %}
+                                
+                                {% if evidence.image_url %}
+                                    <img src="{{ evidence.image_url }}" class="evidence-image" onclick="openImageModal(this.src)" alt="دليل مرفق" onerror="this.style.display='none'">
+                                {% endif %}
+                            </div>
+                        {% else %}
+                            <p style="text-align: center; color: var(--text-muted); font-size: 13px; margin: 15px 0; font-weight: 600;">
+                                <i class="fa-solid fa-file-circle-exclamation" style="font-size: 20px; display: block; margin-bottom: 5px;"></i>
+                                لم يتم إرفاق أدلة بعد.
+                            </p>
+                        {% endfor %}
+
                         {% if order.credentials and user.name == order.buyer_name %}
-                            <h4 style="font-weight: 700; color: var(--accent); margin-bottom: 5px;">🔑 معلومات الحساب المسلمة (للمراجعة):</h4>
+                            <h4 style="font-weight: 800; color: var(--accent); margin-bottom: 8px; margin-top: 18px;"><i class="fa-solid fa-lock-open"></i> معلومات الحساب المسلمة (للمراجعة):</h4>
                             <div class="credentials-box">{{ order.credentials }}</div>
                         {% endif %}
+
+                        <!-- نموذج إضافة أدلة جديدة أثناء النزاع -->
+                        <div style="margin-top: 20px; background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-color); border-radius: 16px; padding: 20px;">
+                            <h4 style="font-weight: 800; color: white; margin-bottom: 12px;"><i class="fa-solid fa-plus-circle"></i> إضافة دليل جديد للنزاع</h4>
+                            
+                            <form method="POST">
+                                <input type="hidden" name="action" value="add_dispute_evidence">
+                                
+                                <div class="form-group">
+                                    <label class="form-label" for="dispute_text"><i class="fa-solid fa-pen"></i> شرح أو تعليق إضافي</label>
+                                    <textarea class="form-input" id="dispute_text" name="dispute_text" placeholder="اكتب تفاصيل إضافية أو رداً على الطرف الآخر..." style="height: 100px;"></textarea>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label class="form-label" for="dispute_image"><i class="fa-solid fa-image"></i> رابط صورة دليل جديدة</label>
+                                    <input type="url" class="form-input" id="dispute_image" name="dispute_image" placeholder="https://example.com/screenshot.png" style="text-align: right;">
+                                </div>
+                                
+                                <button type="submit" class="btn btn-warning" style="width: 100%;"><i class="fa-solid fa-upload"></i> إرفاق دليل جديد</button>
+                            </form>
+                        </div>
 
                     <!-- 6. مسترجع -->
                     {% elif order.status == 'Refunded' %}
@@ -333,13 +618,13 @@
             <!-- عمود شات الصفقة والوساطة الخاص -->
             <div>
                 <div class="chat-container">
-                    <h3 style="font-size: 18px; font-weight: 800; border-bottom: 1px solid var(--border-color); padding-bottom: 12px; margin-bottom: 15px; display: flex; align-items: center; justify-content: space-between;">
-                        <span>💬 شات الوساطة الخاص</span>
-                        <span class="badge badge-success" style="font-size: 11px;">مؤمن بالكامل</span>
+                    <h3 style="font-size: 18px; font-weight: 900; border-bottom: 1px solid var(--border-color); padding-bottom: 14px; margin-bottom: 15px; display: flex; align-items: center; justify-content: space-between; color: white;">
+                        <span><i class="fa-regular fa-comments"></i> شات الوساطة الخاص</span>
+                        <span class="badge badge-success" style="font-size: 11px;"><i class="fa-solid fa-lock"></i> مؤمن بالكامل</span>
                     </h3>
 
                     <!-- رسائل الشات -->
-                    <div class="chat-messages" id="chatMessages">
+                    <div class="chat-messages custom-scrollbar" id="chatMessages">
                         {% for msg in messages %}
                             {% set bubble_class = 'bubble-buyer' %}
                             {% if msg.sender == order.seller_name %}
@@ -351,16 +636,24 @@
                             
                             <div class="chat-bubble {{ bubble_class }}">
                                 <span class="chat-bubble-sender">
+                                    {% if msg.sender == 'admin' %}
+                                        <i class="fa-solid fa-user-shield"></i>
+                                    {% else %}
+                                        <i class="fa-solid fa-user"></i>
+                                    {% endif %}
                                     {{ msg.sender }}
                                     {% if msg.sender == order.buyer_name %}(المشتري){% endif %}
                                     {% if msg.sender == order.seller_name %}(البائع){% endif %}
                                     {% if msg.sender == 'admin' %}(الوسيط 🛡️){% endif %}
                                 </span>
-                                <div>{{ msg.content }}</div>
+                                <div style="font-weight: 600;">{{ msg.content }}</div>
                                 <span class="chat-time">{{ msg.time.strftime('%H:%M') }}</span>
                             </div>
                         {% else %}
-                            <p style="text-align: center; color: var(--text-muted); font-size: 13px; margin: auto 0;">لا توجد رسائل في شات المعاملة حالياً. ابدأ النقاش أو تواصل مع الطرف الآخر!</p>
+                            <p style="text-align: center; color: var(--text-muted); font-size: 13.5px; margin: auto 0; font-weight: 700;">
+                                <i class="fa-regular fa-message" style="font-size: 26px; display: block; margin-bottom: 10px; opacity: 0.5;"></i>
+                                لا توجد رسائل في شات المعاملة حالياً. ابدأ النقاش أو تواصل مع الطرف الآخر!
+                            </p>
                         {% endfor %}
                     </div>
 
@@ -368,7 +661,7 @@
                     <form method="POST" class="chat-form">
                         <input type="hidden" name="action" value="send_message">
                         <input type="text" name="content" class="chat-input" placeholder="اكتب رسالة للطرف الآخر أو للوسيط..." required autocomplete="off">
-                        <button type="submit" class="btn btn-primary btn-sm" style="padding: 10px 18px;">إرسال</button>
+                        <button type="submit" class="btn btn-primary btn-sm" style="padding: 12px 20px;"><i class="fa-solid fa-paper-plane"></i></button>
                     </form>
                 </div>
             </div>
@@ -381,9 +674,53 @@
 
     <!-- سكريبت لجعل الشات ينزل لآخر رسالة تلقائياً -->
     <script>
+        // Auto-scroll chat to bottom
         const chatMessages = document.getElementById('chatMessages');
         if (chatMessages) {
             chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+        
+        // Timer countdown
+        const timerContainer = document.getElementById('timerContainer');
+        if (timerContainer) {
+            let remainingSeconds = parseInt(timerContainer.dataset.seconds) || 0;
+            const timerDisplay = document.getElementById('timerDisplay');
+            
+            function updateTimer() {
+                if (remainingSeconds <= 0) {
+                    timerDisplay.textContent = '00:00:00';
+                    timerDisplay.classList.add('timer-warning');
+                    timerContainer.querySelector('.timer-label').textContent = '⏰ انتهى الوقت! تم تحرير المبلغ تلقائياً للبائع.';
+                    return;
+                }
+                
+                const hours = Math.floor(remainingSeconds / 3600);
+                const minutes = Math.floor((remainingSeconds % 3600) / 60);
+                const seconds = remainingSeconds % 60;
+                
+                timerDisplay.textContent = 
+                    String(hours).padStart(2, '0') + ':' + 
+                    String(minutes).padStart(2, '0') + ':' + 
+                    String(seconds).padStart(2, '0');
+                
+                // Warning when less than 10 minutes
+                if (remainingSeconds < 600) {
+                    timerDisplay.classList.add('timer-warning');
+                }
+                
+                remainingSeconds--;
+            }
+            
+            updateTimer();
+            setInterval(updateTimer, 1000);
+        }
+        
+        // Image modal
+        function openImageModal(src) {
+            const modal = document.getElementById('imageModal');
+            const modalImg = document.getElementById('modalImage');
+            modalImg.src = src;
+            modal.classList.add('active');
         }
     </script>
 

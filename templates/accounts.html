@@ -4,38 +4,52 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>الحسابات المعروضة - وسيط</title>
+    <!-- FontAwesome for Premium Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}">
     <style>
         .filter-section {
-            background-color: var(--bg-secondary);
+            background-color: var(--bg-card);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
             border: 1px solid var(--border-color);
-            padding: 20px;
-            border-radius: 16px;
-            margin-bottom: 30px;
+            padding: 24px;
+            border-radius: 20px;
+            margin-bottom: 35px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
         }
         .filter-form {
             display: flex;
             flex-wrap: wrap;
-            gap: 15px;
+            gap: 20px;
             align-items: flex-end;
         }
         .filter-group {
             flex: 1;
-            min-width: 200px;
+            min-width: 220px;
             text-align: right;
         }
         .filter-select {
             width: 100%;
-            background-color: var(--bg-card);
+            background-color: rgba(7, 8, 10, 0.6);
             border: 1px solid var(--border-color);
-            padding: 10px 15px;
-            border-radius: 8px;
+            padding: 12px 16px;
+            border-radius: 12px;
             color: white;
             outline: none;
             cursor: pointer;
+            font-weight: 700;
+            appearance: none;
+            -webkit-appearance: none;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23a2a8b9' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: left 16px center;
+            background-size: 16px;
+            padding-left: 40px;
         }
         .filter-select:focus {
             border-color: var(--primary);
+            box-shadow: 0 0 10px rgba(0, 255, 157, 0.15);
         }
         .account-card {
             display: flex;
@@ -47,38 +61,41 @@
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
-            margin-bottom: 15px;
+            margin-bottom: 18px;
         }
         .game-title {
-            font-size: 22px;
-            font-weight: 800;
+            font-size: 20px;
+            font-weight: 900;
             color: white;
         }
         .platform-badge {
-            background: rgba(0, 240, 255, 0.1);
+            background: rgba(0, 240, 255, 0.08);
             color: var(--accent);
-            border: 1px solid rgba(0, 240, 255, 0.25);
-            padding: 4px 10px;
-            border-radius: 6px;
+            border: 1px solid rgba(0, 240, 255, 0.2);
+            padding: 5px 12px;
+            border-radius: 8px;
             font-size: 13px;
-            font-weight: 700;
+            font-weight: 800;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
         }
-        .platform-pc { background: rgba(0, 240, 255, 0.08); color: var(--accent); border-color: rgba(0, 240, 255, 0.2); }
-        .platform-playstation { background: rgba(112, 0, 255, 0.08); color: #a855f7; border-color: rgba(112, 0, 255, 0.2); }
-        .platform-xbox { background: rgba(72, 187, 120, 0.08); color: var(--success); border-color: rgba(72, 187, 120, 0.2); }
-        .platform-mobile { background: rgba(237, 137, 54, 0.08); color: var(--warning); border-color: rgba(237, 137, 54, 0.2); }
+        .platform-pc { background: rgba(0, 255, 157, 0.08); color: var(--primary); border-color: rgba(0, 255, 157, 0.2); }
+        .platform-playstation { background: rgba(126, 63, 242, 0.08); color: #b76eff; border-color: rgba(126, 63, 242, 0.2); }
+        .platform-xbox { background: rgba(0, 230, 118, 0.08); color: var(--success); border-color: rgba(0, 230, 118, 0.2); }
+        .platform-mobile { background: rgba(255, 145, 0, 0.08); color: var(--warning); border-color: rgba(255, 145, 0, 0.2); }
 
         .account-img {
             width: 100%;
-            height: 150px;
-            background: linear-gradient(135deg, #1b2030, #131722);
-            border-radius: 10px;
-            margin-bottom: 15px;
+            height: 160px;
+            background: linear-gradient(135deg, #0e111a, #131722);
+            border-radius: 12px;
+            margin-bottom: 18px;
             display: flex;
             align-items: center;
             justify-content: center;
             color: var(--text-muted);
-            font-size: 40px;
+            font-size: 44px;
             position: relative;
             overflow: hidden;
             border: 1px solid var(--border-color);
@@ -87,22 +104,32 @@
             width: 100%;
             height: 100%;
             object-fit: cover;
+            transition: transform 0.5s ease;
+        }
+        .card:hover .account-img img {
+            transform: scale(1.08);
         }
         .account-img-overlay {
             position: absolute;
-            bottom: 8px;
-            right: 8px;
-            background: rgba(10, 11, 14, 0.85);
-            padding: 2px 8px;
-            border-radius: 4px;
-            font-size: 11px;
+            bottom: 10px;
+            right: 10px;
+            background: rgba(7, 8, 10, 0.85);
+            backdrop-filter: blur(4px);
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 700;
             color: var(--text-secondary);
+            border: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            gap: 5px;
         }
         .card-desc {
             color: var(--text-secondary);
             font-size: 14px;
-            line-height: 1.6;
-            margin-bottom: 20px;
+            line-height: 1.7;
+            margin-bottom: 22px;
             flex-grow: 1;
             text-align: right;
             display: -webkit-box;
@@ -115,7 +142,7 @@
             justify-content: space-between;
             align-items: center;
             border-top: 1px solid var(--border-color);
-            padding-top: 15px;
+            padding-top: 18px;
             margin-top: auto;
         }
         .price-tag {
@@ -123,42 +150,50 @@
         }
         .price-value {
             font-size: 24px;
-            font-weight: 800;
+            font-weight: 900;
             color: var(--primary);
-            text-shadow: 0 0 10px rgba(0, 255, 136, 0.15);
+            text-shadow: 0 0 15px rgba(0, 255, 157, 0.2);
+            line-height: 1;
+            margin-bottom: 4px;
         }
         .price-label {
             font-size: 11px;
             color: var(--text-muted);
+            font-weight: 700;
         }
     </style>
 </head>
 <body>
 
+    <!-- Decorative glows in background -->
+    <div class="bg-glow-bubble bg-glow-1"></div>
+    <div class="bg-glow-bubble bg-glow-2"></div>
+
     <!-- الهيدر الموحد -->
     <header class="navbar">
         <div class="container">
             <a href="/" class="logo">
-                <span>وسيط 🎮</span>
+                <span><i class="fa-solid fa-shield-halved"></i> وسيط 🎮</span>
             </a>
             <ul class="nav-links">
-                <li><a href="/" class="nav-link">الرئيسية</a></li>
-                <li><a href="/accounts" class="nav-link active">الحسابات المعروضة</a></li>
-                <li><a href="/sell" class="nav-link">بيع حساب</a></li>
+                <li><a href="/" class="nav-link"><i class="fa-solid fa-house"></i> الرئيسية</a></li>
+                <li><a href="/accounts" class="nav-link active"><i class="fa-solid fa-gamepad"></i> الحسابات المعروضة</a></li>
+                <li><a href="/sell" class="nav-link"><i class="fa-solid fa-tags"></i> بيع حساب</a></li>
             </ul>
             <div class="nav-user">
                 {% if current_user_obj %}
                     <a href="/dashboard" class="wallet-badge">
-                        <span>💳 الرصيد: {{ "{:,.2f}".format(current_user_obj.balance) }} ريال</span>
+                        <i class="fa-solid fa-wallet"></i>
+                        <span>الرصيد: {{ "{:,.2f}".format(current_user_obj.balance) }} ريال</span>
                     </a>
-                    <a href="/dashboard" class="nav-link" style="color: var(--primary);">حسابي ({{ current_user_obj.name }})</a>
+                    <a href="/dashboard" class="nav-link" style="color: var(--primary);"><i class="fa-solid fa-user"></i> {{ current_user_obj.name }}</a>
                     {% if current_user_obj.is_admin %}
-                        <a href="/admin/disputes" class="btn btn-accent btn-sm">لوحة الإدارة 🛡️</a>
+                        <a href="/admin/disputes" class="btn btn-accent btn-sm"><i class="fa-solid fa-user-shield"></i> لوحة الإدارة</a>
                     {% endif %}
-                    <a href="/logout" class="btn btn-secondary btn-sm">خروج</a>
+                    <a href="/logout" class="btn btn-secondary btn-sm"><i class="fa-solid fa-right-from-bracket"></i> خروج</a>
                 {% else %}
-                    <a href="/login" class="nav-link">تسجيل الدخول</a>
-                    <a href="/register" class="btn btn-primary btn-sm">إنشاء حساب</a>
+                    <a href="/login" class="nav-link"><i class="fa-solid fa-right-to-bracket"></i> تسجيل الدخول</a>
+                    <a href="/register" class="btn btn-primary btn-sm"><i class="fa-solid fa-user-plus"></i> إنشاء حساب</a>
                 {% endif %}
             </div>
         </div>
@@ -178,16 +213,16 @@
     {% endwith %}
 
     <main class="main-content container">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
-            <h1 style="font-size: 32px; font-weight: 800;">🎮 الحسابات المعروضة</h1>
-            <a href="/sell" class="btn btn-primary btn-sm">💰 اعرض حسابك للبيع</a>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; flex-wrap: wrap; gap: 15px;">
+            <h1 style="font-size: 32px; font-weight: 900; background: linear-gradient(135deg, white, var(--text-secondary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;"><i class="fa-solid fa-gamepad"></i> الحسابات المعروضة</h1>
+            <a href="/sell" class="btn btn-primary"><i class="fa-solid fa-circle-plus"></i> اعرض حسابك للبيع</a>
         </div>
 
         <!-- فلاتر التصفح -->
         <section class="filter-section">
             <form method="GET" action="/accounts" class="filter-form">
                 <div class="filter-group">
-                    <label class="form-label">تصفية حسب اللعبة</label>
+                    <label class="form-label"><i class="fa-solid fa-gamepad"></i> تصفية حسب اللعبة</label>
                     <select name="game" class="filter-select">
                         <option value="">جميع الألعاب</option>
                         {% for g in games %}
@@ -197,7 +232,7 @@
                 </div>
                 
                 <div class="filter-group">
-                    <label class="form-label">تصفية حسب المنصة</label>
+                    <label class="form-label"><i class="fa-solid fa-desktop"></i> تصفية حسب المنصة</label>
                     <select name="platform" class="filter-select">
                         <option value="">جميع المنصات</option>
                         {% for p in platforms %}
@@ -206,11 +241,11 @@
                     </select>
                 </div>
                 
-                <div style="display: flex; gap: 10px;">
-                    <button class="btn btn-secondary" type="submit">بحث 🔍</button>
+                <div style="display: flex; gap: 12px; margin-top: 10px; width: 100%; justify-content: flex-end; flex-wrap: wrap;">
                     {% if selected_game or selected_platform %}
-                        <a href="/accounts" class="btn btn-danger btn-sm" style="height: 42px; display: inline-flex; align-items: center;">إعادة تعيين</a>
+                        <a href="/accounts" class="btn btn-secondary btn-sm" style="height: 46px; display: inline-flex; align-items: center;"><i class="fa-solid fa-rotate-left"></i> إعادة تعيين</a>
                     {% endif %}
+                    <button class="btn btn-primary" type="submit" style="padding: 10px 30px;"><i class="fa-solid fa-magnifying-glass"></i> بحث</button>
                 </div>
             </form>
         </section>
@@ -223,15 +258,15 @@
                         <div class="card-header">
                             <h2 class="game-title">{{ account.game }}</h2>
                             {% if account.platform == 'PC' or account.platform == 'الحاسب الشخصي' %}
-                                <span class="platform-badge platform-pc">💻 PC</span>
+                                <span class="platform-badge platform-pc"><i class="fa-solid fa-desktop"></i> PC</span>
                             {% elif account.platform == 'PlayStation' or account.platform == 'بلايستيشن' %}
-                                <span class="platform-badge platform-playstation">🎮 PS5 / PS4</span>
+                                <span class="platform-badge platform-playstation"><i class="fa-brands fa-playstation"></i> PS5 / PS4</span>
                             {% elif account.platform == 'Xbox' or account.platform == 'اكس بوكس' %}
-                                <span class="platform-badge platform-xbox">💚 Xbox</span>
+                                <span class="platform-badge platform-xbox"><i class="fa-brands fa-xbox"></i> Xbox</span>
                             {% elif account.platform == 'Mobile' or account.platform == 'جوال' %}
-                                <span class="platform-badge platform-mobile">📱 Mobile</span>
+                                <span class="platform-badge platform-mobile"><i class="fa-solid fa-mobile-screen-button"></i> Mobile</span>
                             {% else %}
-                                <span class="platform-badge">{{ account.platform }}</span>
+                                <span class="platform-badge"><i class="fa-solid fa-gamepad"></i> {{ account.platform }}</span>
                             {% endif %}
                         </div>
 
@@ -240,9 +275,26 @@
                             {% if account.image_url %}
                                 <img src="{{ account.image_url }}" alt="{{ account.game }}">
                             {% else %}
-                                🎮
+                                <i class="fa-solid fa-gamepad" style="opacity: 0.25;"></i>
                             {% endif %}
-                            <div class="account-img-overlay">بواسطة: {{ account.seller }}</div>
+                             <div class="account-img-overlay" style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px; padding: 6px 12px;">
+                                 <div style="display: flex; align-items: center; gap: 5px;">
+                                     <i class="fa-solid fa-user-tag"></i>
+                                     <span>البائع: {{ account.seller }}</span>
+                                 </div>
+                                 {% set rating_info = get_seller_rating(account.seller) %}
+                                 {% if rating_info %}
+                                     <div style="font-size: 11px; color: var(--warning); display: flex; align-items: center; gap: 3px; font-weight: 800;">
+                                         <i class="fa-solid fa-star"></i>
+                                         <span>{{ rating_info.avg }} ({{ rating_info.count }} تقييم)</span>
+                                     </div>
+                                 {% else %}
+                                     <div style="font-size: 10px; color: var(--text-muted); display: flex; align-items: center; gap: 3px; font-weight: 700;">
+                                         <i class="fa-regular fa-star"></i>
+                                         <span>لا توجد تقييمات</span>
+                                     </div>
+                                 {% endif %}
+                             </div>
                         </div>
 
                         <p class="card-desc">{{ account.description }}</p>
@@ -250,23 +302,24 @@
 
                     <div class="card-footer">
                         <div class="price-tag">
-                            <div class="price-value">{{ "{:,.0f}".format(account.price) }} ريال</div>
-                            <div class="price-label">السعر النهائي للوساطة</div>
+                            <div class="price-value">{{ "{:,.0f}".format(account.price) }} <span style="font-size: 14px;">ريال</span></div>
+                            <div class="price-label">السعر شامل الضمان</div>
                         </div>
 
                         {% if current_user_obj and current_user_obj.name == account.seller %}
-                            <button class="btn btn-secondary btn-sm" disabled style="cursor: not-allowed; opacity: 0.6;">حسابك المعروض</button>
+                            <button class="btn btn-secondary btn-sm" disabled style="cursor: not-allowed; opacity: 0.6;"><i class="fa-solid fa-user-lock"></i> حسابك المعروض</button>
                         {% else %}
                             <form method="POST" action="/order/create/{{ account.id }}">
-                                <button type="submit" class="btn btn-primary btn-sm">شراء بالوساطة 🛡️</button>
+                                <button type="submit" class="btn btn-primary btn-sm"><i class="fa-solid fa-shield-halved"></i> شراء آمن</button>
                             </form>
                         {% endif %}
                     </div>
                 </div>
             {% else %}
-                <div style="grid-column: 1 / -1; text-align: center; padding: 60px 20px; background-color: var(--bg-secondary); border-radius: 16px; border: 1px solid var(--border-color);">
-                    <p style="font-size: 18px; color: var(--text-secondary); margin-bottom: 20px;">لا توجد حسابات معروضة حالياً تطابق الفلاتر المحددة.</p>
-                    <a href="/sell" class="btn btn-primary">💰 كن أول من ينشر حسابه للبيع</a>
+                <div style="grid-column: 1 / -1; text-align: center; padding: 70px 20px; background-color: var(--bg-card); backdrop-filter: blur(12px); border-radius: 24px; border: 1px solid var(--border-color);">
+                    <i class="fa-solid fa-box-open" style="font-size: 54px; color: var(--text-muted); margin-bottom: 20px;"></i>
+                    <p style="font-size: 18px; color: var(--text-secondary); margin-bottom: 24px; font-weight: 700;">لا توجد حسابات معروضة حالياً تطابق الفلاتر المحددة.</p>
+                    <a href="/sell" class="btn btn-primary"><i class="fa-solid fa-circle-plus"></i> كن أول من ينشر حسابه للبيع</a>
                 </div>
             {% endfor %}
         </div>

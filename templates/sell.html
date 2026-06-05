@@ -4,45 +4,54 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>عرض حساب للبيع - وسيط</title>
+    <!-- FontAwesome for Premium Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}">
     <style>
         .sell-form-container {
             max-width: 600px;
             margin: 0 auto;
-            background-color: var(--bg-card);
+            background: var(--bg-card);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
             border: 1px solid var(--border-color);
             padding: 40px;
-            border-radius: 20px;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.3);
+            border-radius: 24px;
+            box-shadow: 0 20px 45px rgba(0, 0, 0, 0.4);
         }
     </style>
 </head>
 <body>
 
+    <!-- Decorative glows in background -->
+    <div class="bg-glow-bubble bg-glow-1"></div>
+    <div class="bg-glow-bubble bg-glow-2"></div>
+
     <!-- الهيدر الموحد -->
     <header class="navbar">
         <div class="container">
             <a href="/" class="logo">
-                <span>وسيط 🎮</span>
+                <span><i class="fa-solid fa-shield-halved"></i> وسيط 🎮</span>
             </a>
             <ul class="nav-links">
-                <li><a href="/" class="nav-link">الرئيسية</a></li>
-                <li><a href="/accounts" class="nav-link">الحسابات المعروضة</a></li>
-                <li><a href="/sell" class="nav-link active">بيع حساب</a></li>
+                <li><a href="/" class="nav-link"><i class="fa-solid fa-house"></i> الرئيسية</a></li>
+                <li><a href="/accounts" class="nav-link"><i class="fa-solid fa-gamepad"></i> الحسابات المعروضة</a></li>
+                <li><a href="/sell" class="nav-link active"><i class="fa-solid fa-tags"></i> بيع حساب</a></li>
             </ul>
             <div class="nav-user">
                 {% if current_user_obj %}
                     <a href="/dashboard" class="wallet-badge">
-                        <span>💳 الرصيد: {{ "{:,.2f}".format(current_user_obj.balance) }} ريال</span>
+                        <i class="fa-solid fa-wallet"></i>
+                        <span>الرصيد: {{ "{:,.2f}".format(current_user_obj.balance) }} ريال</span>
                     </a>
-                    <a href="/dashboard" class="nav-link" style="color: var(--primary);">حسابي ({{ current_user_obj.name }})</a>
+                    <a href="/dashboard" class="nav-link" style="color: var(--primary);"><i class="fa-solid fa-user"></i> {{ current_user_obj.name }}</a>
                     {% if current_user_obj.is_admin %}
-                        <a href="/admin/disputes" class="btn btn-accent btn-sm">لوحة الإدارة 🛡️</a>
+                        <a href="/admin/disputes" class="btn btn-accent btn-sm"><i class="fa-solid fa-user-shield"></i> لوحة الإدارة</a>
                     {% endif %}
-                    <a href="/logout" class="btn btn-secondary btn-sm">خروج</a>
+                    <a href="/logout" class="btn btn-secondary btn-sm"><i class="fa-solid fa-right-from-bracket"></i> خروج</a>
                 {% else %}
-                    <a href="/login" class="nav-link">تسجيل الدخول</a>
-                    <a href="/register" class="btn btn-primary btn-sm">إنشاء حساب</a>
+                    <a href="/login" class="nav-link"><i class="fa-solid fa-right-to-bracket"></i> تسجيل الدخول</a>
+                    <a href="/register" class="btn btn-primary btn-sm"><i class="fa-solid fa-user-plus"></i> إنشاء حساب</a>
                 {% endif %}
             </div>
         </div>
@@ -63,7 +72,7 @@
 
     <main class="main-content container">
         <div class="sell-form-container">
-            <h2 class="form-title">🎮 اعرض حسابك للبيع بالوساطة</h2>
+            <h2 class="form-title"><i class="fa-solid fa-tags"></i> اعرض حسابك للبيع بالوساطة</h2>
             <p style="color: var(--text-secondary); text-align: center; margin-bottom: 30px; font-size: 14px; line-height: 1.6;">
                 املأ تفاصيل حسابك بدقة وسيتكفل الوسيط بضمان استلامك للمبلغ فوراً بعد تأكيد المشتري للاستلام.
             </p>
@@ -71,45 +80,57 @@
             <form method="POST">
                 <div class="form-group">
                     <label class="form-label" for="game">اللعبة الإلكترونية</label>
-                    <select class="form-input" id="game" name="game" required style="cursor: pointer;">
-                        <option value="فورتنايت">فورتنايت (Fortnite)</option>
-                        <option value="ببجي موبايل">ببجي موبايل (PUBG Mobile)</option>
-                        <option value="كول اوف ديوتي">كول اوف ديوتي (Call of Duty)</option>
-                        <option value="فالورانت">فالورانت (Valorant)</option>
-                        <option value="ليج اوف ليجندز">ليج اوف ليجندز (League of Legends)</option>
-                        <option value="ماين كرافت">ماين كرافت (Minecraft)</option>
-                        <option value="روبلوكس">روبلوكس (Roblox)</option>
-                        <option value="أوفر ووتش 2">أوفر ووتش 2 (Overwatch 2)</option>
-                        <option value="أبيكس ليجندز">أبيكس ليجندز (Apex Legends)</option>
-                        <option value="فيفا / إف سي">فيفا / إف سي (FIFA / EA FC)</option>
-                        <option value="جي تي أي 5">جي تي أي 5 (GTA V Online)</option>
-                        <option value="فري فاير">فري فاير (Free Fire)</option>
-                        <option value="كلاش اوف كلانس">كلاش اوف كلانس (Clash of Clans)</option>
-                        <option value="أخرى">لعبة أخرى / حساب رقمي آخر</option>
-                    </select>
+                    <div class="form-input-wrapper">
+                        <i class="fa-solid fa-gamepad"></i>
+                        <select class="form-input" id="game" name="game" required style="cursor: pointer;">
+                            <option value="فورتنايت">فورتنايت (Fortnite)</option>
+                            <option value="ببجي موبايل">ببجي موبايل (PUBG Mobile)</option>
+                            <option value="كول اوف ديوتي">كول اوف ديوتي (Call of Duty)</option>
+                            <option value="فالورانت">فالورانت (Valorant)</option>
+                            <option value="ليج اوف ليجندز">ليج اوف ليجندز (League of Legends)</option>
+                            <option value="ماين كرافت">ماين كرافت (Minecraft)</option>
+                            <option value="روبلوكس">روبلوكس (Roblox)</option>
+                            <option value="أوفر ووتش 2">أوفر ووتش 2 (Overwatch 2)</option>
+                            <option value="أبيكس ليجندز">أبيكس ليجندز (Apex Legends)</option>
+                            <option value="فيفا / إف سي">فيفا / إف سي (FIFA / EA FC)</option>
+                            <option value="جي تي أي 5">جي تي أي 5 (GTA V Online)</option>
+                            <option value="فري فاير">فري فاير (Free Fire)</option>
+                            <option value="كلاش اوف كلانس">كلاش اوف كلانس (Clash of Clans)</option>
+                            <option value="أخرى">لعبة أخرى / حساب رقمي آخر</option>
+                        </select>
+                    </div>
                 </div>
 
                 <div class="form-group">
                     <label class="form-label" for="platform">منصة التشغيل / الجهاز</label>
-                    <select class="form-input" id="platform" name="platform" required style="cursor: pointer;">
-                        <option value="PC">كمبيوتر (PC / Steam / Epic)</option>
-                        <option value="PlayStation">بلايستيشن (PlayStation Network)</option>
-                        <option value="Xbox">اكس بوكس (Xbox Live)</option>
-                        <option value="Mobile">جوال (iOS / Android)</option>
-                        <option value="Nintendo Switch">نينتندو سويتش (Nintendo)</option>
-                        <option value="أخرى">منصة أخرى</option>
-                    </select>
+                    <div class="form-input-wrapper">
+                        <i class="fa-solid fa-circle-play"></i>
+                        <select class="form-input" id="platform" name="platform" required style="cursor: pointer;">
+                            <option value="PC">كمبيوتر (PC / Steam / Epic)</option>
+                            <option value="PlayStation">بلايستيشن (PlayStation Network)</option>
+                            <option value="Xbox">اكس بوكس (Xbox Live)</option>
+                            <option value="Mobile">جوال (iOS / Android)</option>
+                            <option value="Nintendo Switch">نينتندو سويتش (Nintendo)</option>
+                            <option value="أخرى">منصة أخرى</option>
+                        </select>
+                    </div>
                 </div>
 
                 <div class="form-group">
                     <label class="form-label" for="price">السعر المطلوب (بالريال السعودي)</label>
-                    <input class="form-input" type="number" id="price" name="price" placeholder="مثال: 250" min="5" step="1" required>
+                    <div class="form-input-wrapper">
+                        <i class="fa-solid fa-money-bill-wave"></i>
+                        <input class="form-input" type="number" id="price" name="price" placeholder="مثال: 250" min="5" step="1" required>
+                    </div>
                 </div>
 
                 <div class="form-group">
                     <label class="form-label" for="image_url">رابط صورة تعبيرية للحساب (اختياري)</label>
-                    <input class="form-input" type="url" id="image_url" name="image_url" placeholder="https://example.com/image.png">
-                    <span style="color: var(--text-muted); font-size: 11px; display: block; margin-top: 5px;">يمكنك وضع رابط لصورة تحتوي على إثبات محتويات الحساب لتسريع عملية البيع.</span>
+                    <div class="form-input-wrapper">
+                        <i class="fa-solid fa-image"></i>
+                        <input class="form-input" type="url" id="image_url" name="image_url" placeholder="https://example.com/image.png">
+                    </div>
+                    <span style="color: var(--text-muted); font-size: 11px; display: block; margin-top: 5px; font-weight: 600;">يمكنك وضع رابط لصورة تحتوي على إثبات محتويات الحساب لتسريع عملية البيع.</span>
                 </div>
 
                 <div class="form-group">
@@ -117,7 +138,7 @@
                     <textarea class="form-input" id="description" name="description" placeholder="اكتب تفاصيل الحساب، مثلاً: مستوى الحساب، عدد السكنات النادرة، الأسلحة المطورة، التقييم الحالي، إلخ..." required></textarea>
                 </div>
 
-                <button class="btn btn-primary" type="submit" style="width: 100%; margin-top: 20px;">🚀 نشر الحساب للبيع بالوساطة</button>
+                <button class="btn btn-primary" type="submit" style="width: 100%; margin-top: 20px;"><i class="fa-solid fa-circle-check"></i> نشر الحساب للبيع بالوساطة</button>
             </form>
         </div>
     </main>
