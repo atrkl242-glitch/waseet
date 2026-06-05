@@ -9,6 +9,8 @@ app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:/
 app.secret_key = 'waseet123_secure_key'
 bcrypt = Bcrypt(app)
 db = SQLAlchemy(app)
+with app.app_context():
+    db.create_all()
 
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
