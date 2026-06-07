@@ -2,6 +2,7 @@
 <html dir="rtl" lang="ar">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>وسيط - المحادثة</title>
     <style>
         body { background: #0f0f0f; color: white; font-family: Arial, sans-serif; padding: 40px 20px; max-width: 700px; margin: 0 auto; }
@@ -12,6 +13,13 @@
         .msg-content { color: #ccc; }
         textarea { width: 100%; background: #1a1a1a; border: 1px solid #00ff88; border-radius: 8px; padding: 12px; color: white; font-size: 16px; margin-top: 20px; resize: none; box-sizing: border-box; }
         button { margin-top: 10px; background: #00ff88; color: black; border: none; padding: 12px 30px; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; }
+        @media (max-width: 600px) {
+            body { padding: 20px 12px; }
+            h1 { font-size: 22px; }
+            textarea { font-size: 14px; padding: 10px; }
+            button { width: 100%; padding: 12px 20px; }
+            .msg-box { padding: 10px; }
+        }
     </style>
 </head>
 <body>

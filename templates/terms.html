@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>شروط الاستخدام وإخلاء المسؤولية - وسيط</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}">
+</head>
+<body>
+
+    <div class="bg-glow-bubble bg-glow-1"></div>
+    <div class="bg-glow-bubble bg-glow-2"></div>
+
+    <header class="navbar">
+        <div class="container">
+            <a href="/" class="logo">
+                <span><i class="fa-solid fa-shield-halved"></i> وسيط 🎮</span>
+            </a>
+            <ul class="nav-links">
+                <li><a href="/" class="nav-link"><i class="fa-solid fa-house"></i> الرئيسية</a></li>
+                <li><a href="/accounts" class="nav-link"><i class="fa-solid fa-gamepad"></i> الحسابات المعروضة</a></li>
+                <li><a href="/sell" class="nav-link"><i class="fa-solid fa-tags"></i> بيع حساب</a></li>
+            </ul>
+            <div class="nav-user">
+                {% if current_user_obj %}
+                    <a href="/dashboard" class="wallet-badge">
+                        <i class="fa-solid fa-wallet"></i>
+                        <span>الرصيد: {{ "{:,.2f}".format(current_user_obj.balance) }} ريال</span>
+                    </a>
+                    {% include 'notification_bell.html' %}
+                    <a href="/dashboard" class="nav-link" style="color: var(--primary);"><i class="fa-solid fa-user"></i> {{ current_user_obj.name }}</a>
+                    {% if current_user_obj.is_admin %}
+                        <a href="/admin/disputes" class="btn btn-accent btn-sm"><i class="fa-solid fa-user-shield"></i> لوحة الإدارة</a>
+                    {% endif %}
+                    <a href="/logout" class="btn btn-secondary btn-sm"><i class="fa-solid fa-right-from-bracket"></i> خروج</a>
+                {% else %}
+                    <a href="/login" class="nav-link"><i class="fa-solid fa-right-to-bracket"></i> تسجيل الدخول</a>
+                    <a href="/register" class="btn btn-primary btn-sm"><i class="fa-solid fa-user-plus"></i> إنشاء حساب</a>
+                {% endif %}
+            </div>
+        </div>
+    </header>
+
+    <main class="main-content container">
+        <div style="margin-bottom: 35px;">
+            <h1 style="font-size: 32px; font-weight: 900; background: linear-gradient(135deg, white, var(--text-secondary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                <i class="fa-solid fa-file-contract"></i> شروط الاستخدام وإخلاء المسؤولية
+            </h1>
+            <p style="color: var(--text-secondary); font-weight: 600; margin-top: 5px;">آخر تحديث: يناير 2026</p>
+        </div>
+
+        <div style="background-color: var(--bg-card); backdrop-filter: blur(12px); border: 1px solid var(--border-color); border-radius: 24px; padding: 40px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);">
+            
+            <div style="margin-bottom: 35px; border-bottom: 1px solid var(--border-color); padding-bottom: 25px;">
+                <h2 style="font-size: 24px; font-weight: 900; color: white; margin-bottom: 15px;"><i class="fa-solid fa-gavel" style="color: var(--primary);"></i> 1. تعريف المنصة ودورها</h2>
+                <p style="color: var(--text-secondary); line-height: 2; font-size: 15px; font-weight: 500;">
+                    منصة <strong style="color: white;">"وسيط"</strong> هي منصة تقنية تعمل كوسيط تقني محايد لتسهيل عمليات تبادل الحسابات الرقمية بين البائعين والمشترين. 
+                    المنصة <strong style="color: #ff5252;">ليست طرفاً</strong> في عقد البيع والشراء بين المستخدمين، ولا تمتلك الحسابات المعروضة، 
+                    ولا تتحمل أي مسؤولية قانونية أو مالية عن محتوى الحسابات أو جودتها أو صلاحيتها للاستخدام.
+                </p>
+            </div>
+
+            <div style="margin-bottom: 35px; border-bottom: 1px solid var(--border-color); padding-bottom: 25px;">
+                <h2 style="font-size: 24px; font-weight: 900; color: white; margin-bottom: 15px;"><i class="fa-solid fa-scale-balanced" style="color: var(--warning);"></i> 2. دور الوسيط في فصل النزاعات</h2>
+                <p style="color: var(--text-secondary); line-height: 2; font-size: 15px; font-weight: 500;">
+                    عند نشوب نزاع بين البائع والمشتري، تقوم المنصة بدور الوسيط التقني بناءً على <strong style="color: white;">ظاهر الأدلة والبيانات المسلمة وقت النزاع</strong>. 
+                    يتم اتخاذ القرارات بناءً على:
+                </p>
+                <ul style="color: var(--text-secondary); line-height: 2; font-size: 15px; font-weight: 500; padding-right: 20px;">
+                    <li style="margin-bottom: 8px;">النصوص والشروحات المقدمة من الطرفين وقت فتح النزاع.</li>
+                    <li style="margin-bottom: 8px;">الصور والملفات المرفوعة كأدلة في ملف النزاع.</li>
+                    <li style="margin-bottom: 8px;">أي بيانات إضافية يطلبها المشرف ويقدمها الأطراف.</li>
+                </ul>
+                <p style="color: var(--text-secondary); line-height: 2; font-size: 15px; font-weight: 500; margin-top: 10px;">
+                    <strong style="color: #ff5252;">تنويه هام:</strong> قرارات الوسيط مبنية على ظاهر الأدلة المتاحة وقت الفصل في النزاع، 
+                    ولا تعتبر حكماً قضائياً أو ملزماً قانونياً. المنصة لا تضمن صحة الأدلة المقدمة من أي طرف.
+                </p>
+            </div>
+
+            <div style="margin-bottom: 35px; border-bottom: 1px solid var(--border-color); padding-bottom: 25px;">
+                <h2 style="font-size: 24px; font-weight: 900; color: white; margin-bottom: 15px;"><i class="fa-solid fa-circle-exclamation" style="color: var(--danger);"></i> 3. إخلاء المسؤولية (إعفاء صريح)</h2>
+                <div style="background: rgba(255, 23, 68, 0.05); border: 1px solid rgba(255, 23, 68, 0.2); padding: 25px; border-radius: 16px; margin: 15px 0;">
+                    <p style="color: #feb2b2; line-height: 2; font-size: 15px; font-weight: 600;">
+                        <i class="fa-solid fa-triangle-exclamation" style="margin-left: 8px;"></i>
+                        <strong style="color: white;">إخلاء مسؤولية كامل:</strong> بموجب استخدامك للمنصة، أنت تقر وتوافق بشكل صريح على أن:
+                    </p>
+                    <ul style="color: #feb2b2; line-height: 2; font-size: 14px; font-weight: 500; padding-right: 20px; margin-top: 10px;">
+                        <li style="margin-bottom: 10px;">المنصة وسيط تقني فقط ولا تتحمل أي مسؤولية قانونية أو مالية عن أي عيوب مستقبلية تظهر في الحسابات بعد إتمام الصفقة وإغلاق النزاع.</li>
+                        <li style="margin-bottom: 10px;">المنصة لا تتحمل مسؤولية عمليات سحب الحسابات (Account Recovery) التي قد يقوم بها المالك الأصلي بعد إغلاق النزاع وتسليم الأطراف مستحقاتهم.</li>
+                        <li style="margin-bottom: 10px;">المنصة لا تضمن استمرارية صلاحية الحسابات أو عدم تعرضها للإغلاق من قبل مطوري اللعبة بعد انتهاء المعاملة.</li>
+                        <li style="margin-bottom: 10px;">بمجرد إغلاق النزاع وتسليم كل طرف مستحقاته، تبرأ ذمة المنصة بالكامل من أي مطالبات مستقبلية متعلقة بتلك الصفقة.</li>
+                        <li style="margin-bottom: 10px;">المنصة غير مسؤولة عن أي أضرار غير مباشرة أو تبعية أو خسائر في الأرباح تنشأ عن استخدام الحسابات المبيعة.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div style="margin-bottom: 35px; border-bottom: 1px solid var(--border-color); padding-bottom: 25px;">
+                <h2 style="font-size: 24px; font-weight: 900; color: white; margin-bottom: 15px;"><i class="fa-solid fa-shield-halved" style="color: var(--primary);"></i> 4. التزامات المستخدم</h2>
+                <p style="color: var(--text-secondary); line-height: 2; font-size: 15px; font-weight: 500;">
+                    باستخدامك للمنصة، أنت تتعهد بما يلي:
+                </p>
+                <ul style="color: var(--text-secondary); line-height: 2; font-size: 15px; font-weight: 500; padding-right: 20px;">
+                    <li style="margin-bottom: 8px;">أن جميع المعلومات التي تقدمها صحيحة وكاملة.</li>
+                    <li style="margin-bottom: 8px;">أنك تملك الحساب الذي تعرضه للبيع أو لديك الإذن القانوني بالتصرف فيه.</li>
+                    <li style="margin-bottom: 8px;">عدم استخدام المنصة في غسيل الأموال أو أي نشاط غير قانوني.</li>
+                    <li style="margin-bottom: 8px;">عدم استغلال نظام الوساطة للاحتيال على المستخدمين الآخرين.</li>
+                    <li style="margin-bottom: 8px;">الالتزام بقرارات الوسيط في النزاعات وقبولها كحل نهائي للنزاع.</li>
+                </ul>
+            </div>
+
+            <div style="margin-bottom: 35px; border-bottom: 1px solid var(--border-color); padding-bottom: 25px;">
+                <h2 style="font-size: 24px; font-weight: 900; color: white; margin-bottom: 15px;"><i class="fa-solid fa-user-lock" style="color: var(--accent);"></i> 5. الخصوصية والأمان</h2>
+                <p style="color: var(--text-secondary); line-height: 2; font-size: 15px; font-weight: 500;">
+                    المنصة تتخذ أعلى معايير الأمان لحماية بيانات المستخدمين. جميع بيانات الحسابات المسلمة عبر المنصة 
+                    يتم تشفيرها وعرضها فقط للأطراف المعنية بالصفقة. المنصة لا تشارك أو تبيع بيانات المستخدمين لأي جهة خارجية.
+                </p>
+            </div>
+
+            <div style="margin-bottom: 35px;">
+                <h2 style="font-size: 24px; font-weight: 900; color: white; margin-bottom: 15px;"><i class="fa-solid fa-handshake" style="color: var(--success);"></i> 6. الموافقة والقبول</h2>
+                <p style="color: var(--text-secondary); line-height: 2; font-size: 15px; font-weight: 500;">
+                    باستخدامك لمنصة وسيط، فإنك تقر بأنك قد قرأت وفهمت وقبلت جميع الشروط والأحكام المذكورة أعلاه. 
+                    إذا كنت لا توافق على هذه الشروط، يرجى عدم استخدام المنصة.
+                </p>
+                <p style="color: var(--text-secondary); line-height: 2; font-size: 15px; font-weight: 500; margin-top: 10px;">
+                    تحتفظ المنصة بالحق في تحديث هذه الشروط في أي وقت. سيتم إشعار المستخدمين بالتغييرات الجوهرية عبر البريد الإلكتروني المسجل.
+                </p>
+            </div>
+
+        </div>
+
+        <div style="text-align: center; margin: 40px 0;">
+            <a href="/" class="btn btn-primary"><i class="fa-solid fa-house"></i> العودة للرئيسية</a>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div style="display: flex; justify-content: center; gap: 30px; flex-wrap: wrap; margin-bottom: 10px;">
+            <a href="/" style="color: var(--text-secondary); text-decoration: none; font-weight: 700; font-size: 14px;"><i class="fa-solid fa-house"></i> الرئيسية</a>
+            <a href="/accounts" style="color: var(--text-secondary); text-decoration: none; font-weight: 700; font-size: 14px;"><i class="fa-solid fa-gamepad"></i> الحسابات المعروضة</a>
+            <a href="/sell" style="color: var(--text-secondary); text-decoration: none; font-weight: 700; font-size: 14px;"><i class="fa-solid fa-tags"></i> بيع حساب</a>
+            <a href="/terms" style="color: var(--primary); text-decoration: none; font-weight: 700; font-size: 14px;"><i class="fa-solid fa-file-contract"></i> الشروط والأحكام</a>
+        </div>
+        <p>جميع الحقوق محفوظة © 2026 لـ منصة <span>وسيط</span> لبيع الحسابات بأمان.</p>
+    </footer>
+
+</body>
+</html>

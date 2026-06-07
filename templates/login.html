@@ -31,13 +31,14 @@
                         <i class="fa-solid fa-wallet"></i>
                         <span>الرصيد: {{ "{:,.2f}".format(current_user_obj.balance) }} ريال</span>
                     </a>
+                    {% include 'notification_bell.html' %}
                     <a href="/dashboard" class="nav-link" style="color: var(--primary);"><i class="fa-solid fa-user"></i> {{ current_user_obj.name }}</a>
                     {% if current_user_obj.is_admin %}
                         <a href="/admin/disputes" class="btn btn-accent btn-sm"><i class="fa-solid fa-user-shield"></i> لوحة الإدارة</a>
                     {% endif %}
                     <a href="/logout" class="btn btn-secondary btn-sm"><i class="fa-solid fa-right-from-bracket"></i> خروج</a>
                 {% else %}
-                    <a href="/login" class="nav-link active"><i class="fa-solid fa-right-to-bracket"></i> تسجيل الدخول</a>
+                    <a href="/login" class="nav-link"><i class="fa-solid fa-right-to-bracket"></i> تسجيل الدخول</a>
                     <a href="/register" class="btn btn-primary btn-sm"><i class="fa-solid fa-user-plus"></i> إنشاء حساب</a>
                 {% endif %}
             </div>

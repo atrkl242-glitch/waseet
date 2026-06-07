@@ -257,6 +257,7 @@
                         <i class="fa-solid fa-wallet"></i>
                         <span>الرصيد: {{ "{:,.2f}".format(current_user_obj.balance) }} ريال</span>
                     </a>
+                    {% include 'notification_bell.html' %}
                     <a href="/dashboard" class="nav-link" style="color: var(--primary);"><i class="fa-solid fa-user"></i> {{ current_user_obj.name }}</a>
                     {% if current_user_obj.is_admin %}
                         <a href="/admin/disputes" class="btn btn-accent btn-sm"><i class="fa-solid fa-user-shield"></i> لوحة الإدارة</a>
@@ -393,15 +394,15 @@
                                 <span><strong>وصلت بيانات الحساب!</strong> يرجى فحص الحساب الآن بشكل دقيق، وتغيير الإيميل والرقم السري، وتفعيل التحقق الثنائي لحماية الحساب.</span>
                             </div>
 
-                            <!-- تايمر العد التنازلي 2 ساعة -->
+                            <!-- تايمر العد التنازلي يومين -->
                             <div class="timer-container" id="timerContainer" data-seconds="{{ remaining_seconds }}">
-                                <div class="timer-display" id="timerDisplay">02:00:00</div>
+                                <div class="timer-display" id="timerDisplay">48:00:00</div>
                                 <div class="timer-label">
                                     <i class="fa-solid fa-hourglass-half"></i>
                                     الوقت المتبقي لتأكيد الاستلام قبل تحرير المبلغ تلقائياً للبائع
                                 </div>
                                 <div style="margin-top: 12px; font-size: 12px; color: var(--text-muted); font-weight: 600;">
-                                    <i class="fa-solid fa-info-circle"></i> إذا لم تؤكد الاستلام خلال ساعتين، سيتم تحرير المبلغ تلقائياً للبائع
+                                    <i class="fa-solid fa-info-circle"></i> إذا لم تؤكد الاستلام خلال يومين، سيتم تحرير المبلغ تلقائياً للبائع
                                 </div>
                             </div>
 
@@ -428,7 +429,7 @@
                                 <h4 style="font-weight: 800; color: #ff5252; margin-bottom: 15px;"><i class="fa-solid fa-file-lines"></i> رفع نزاع مع إرفاق أدلة</h4>
                                 <p style="color: var(--text-secondary); font-size: 13px; margin-bottom: 15px; font-weight: 600;">قم بإرفاق شرح مفصل للمشكلة وصورة دليل (رابط) لإثبات صحة كلامك. المشرف سيراجع الأدلة ويتخذ القرار المناسب.</p>
                                 
-                                <form method="POST">
+                                <form method="POST" enctype="multipart/form-data">
                                     <input type="hidden" name="action" value="raise_dispute">
                                     
                                     <div class="form-group">
@@ -437,8 +438,9 @@
                                     </div>
                                     
                                     <div class="form-group">
-                                        <label class="form-label" for="dispute_image"><i class="fa-solid fa-image"></i> رابط صورة كمثال أو دليل (اختياري)</label>
-                                        <input type="url" class="form-input" id="dispute_image" name="dispute_image" placeholder="https://example.com/screenshot.png" style="text-align: right;">
+                                        <label class="form-label" for="dispute_image"><i class="fa-solid fa-image"></i> صورة دليل (اختياري)</label>
+                                        <input type="file" class="form-input" id="dispute_image" name="dispute_image" accept="image/png,image/jpeg,image/jpg,image/gif,image/webp" style="text-align: right; padding: 10px;">
+                                        <div style="font-size: 12px; color: var(--text-muted); margin-top: 5px;">الحد الأقصى للحجم: 16 ميجابايت. الصيغ المسموحة: PNG, JPG, GIF, WebP</div>
                                     </div>
                                     
                                     <button type="submit" class="btn btn-danger" style="width: 100%;"><i class="fa-solid fa-gavel"></i> تأكيد رفع النزاع مع الأدلة</button>
@@ -451,7 +453,7 @@
                             
                             <!-- عرض التايمر للبائع أيضاً -->
                             <div class="timer-container" id="timerContainer" data-seconds="{{ remaining_seconds }}">
-                                <div class="timer-display" id="timerDisplay">02:00:00</div>
+                                <div class="timer-display" id="timerDisplay">48:00:00</div>
                                 <div class="timer-label">
                                     <i class="fa-solid fa-hourglass-half"></i>
                                     الوقت المتبقي للمشتري لتأكيد الاستلام - بعدها سيتم تحرير المبلغ لك تلقائياً
@@ -589,7 +591,7 @@
                         <div style="margin-top: 20px; background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-color); border-radius: 16px; padding: 20px;">
                             <h4 style="font-weight: 800; color: white; margin-bottom: 12px;"><i class="fa-solid fa-plus-circle"></i> إضافة دليل جديد للنزاع</h4>
                             
-                            <form method="POST">
+                            <form method="POST" enctype="multipart/form-data">
                                 <input type="hidden" name="action" value="add_dispute_evidence">
                                 
                                 <div class="form-group">
@@ -598,13 +600,57 @@
                                 </div>
                                 
                                 <div class="form-group">
-                                    <label class="form-label" for="dispute_image"><i class="fa-solid fa-image"></i> رابط صورة دليل جديدة</label>
-                                    <input type="url" class="form-input" id="dispute_image" name="dispute_image" placeholder="https://example.com/screenshot.png" style="text-align: right;">
+                                    <label class="form-label" for="dispute_image"><i class="fa-solid fa-image"></i> صورة دليل جديدة</label>
+                                    <input type="file" class="form-input" id="dispute_image" name="dispute_image" accept="image/png,image/jpeg,image/jpg,image/gif,image/webp" style="text-align: right; padding: 10px;">
+                                    <div style="font-size: 12px; color: var(--text-muted); margin-top: 5px;">الحد الأقصى للحجم: 16 ميجابايت. الصيغ المسموحة: PNG, JPG, GIF, WebP</div>
                                 </div>
                                 
                                 <button type="submit" class="btn btn-warning" style="width: 100%;"><i class="fa-solid fa-upload"></i> إرفاق دليل جديد</button>
                             </form>
                         </div>
+
+                    <!-- 6.5. انتظار استرداد الحساب من المشتري -->
+                    {% elif order.status == 'Awaiting_Buyer_Recovery' %}
+                        {% if user.name == order.buyer_name %}
+                            <div class="alert alert-warning" style="margin-bottom: 22px;">
+                                <span><strong>⚖️ تم الموافقة على إرجاع المبلغ!</strong> لإتمام عملية الاسترداد، يرجى إدخال بيانات الحساب الحالية (اسم المستخدم والرقم السري) لتسليمها للإدارة ومن ثم استرجاع أموالك.</span>
+                            </div>
+                            
+                            <form method="POST">
+                                <input type="hidden" name="action" value="submit_recovery_data">
+                                <div class="form-group">
+                                    <label class="form-label" for="recovery_data"><i class="fa-solid fa-rotate-left"></i> بيانات الحساب الحالية للتسليم للإدارة</label>
+                                    <textarea class="form-input" id="recovery_data" name="recovery_data" placeholder="اكتب هنا بيانات الحساب الحالية كما تستخدمها الآن:
+اسم المستخدم الحالي: ...
+الرقم السري الحالي: ...
+أي معلومات أخرى..." required style="height: 140px; font-family: monospace; text-align: right;"></textarea>
+                                </div>
+                                <button type="submit" class="btn btn-warning" style="width: 100%;"><i class="fa-solid fa-paper-plane"></i> تسليم بيانات الحساب للإدارة</button>
+                            </form>
+                            
+                            {% if order.buyer_recovery_data %}
+                                <div style="margin-top: 20px; background: rgba(0, 255, 157, 0.03); border: 1px solid rgba(0, 255, 157, 0.15); padding: 18px; border-radius: 12px;">
+                                    <p style="color: var(--primary); font-weight: 800; margin-bottom: 8px;"><i class="fa-solid fa-check-circle"></i> ✅ لقد قمت بتسليم بيانات الحساب للإدارة.</p>
+                                    <p style="color: var(--text-secondary); font-size: 13px; font-weight: 600;">بانتظار مراجعة المشرف للبيانات وإغلاق النزاع واسترجاع المبلغ إلى محفظتك.</p>
+                                </div>
+                            {% endif %}
+                        {% else %}
+                            <div class="alert alert-info">
+                                <span><strong>⏳ بانتظار المشتري:</strong> تم طلب استرداد الحساب من المشتري. ينتظر المشرف قيام المشتري بتسليم بيانات الحساب الحالية لتسليمها لك وإغلاق النزاع.</span>
+                            </div>
+                            {% if order.buyer_recovery_data and user.is_admin %}
+                                <h4 style="font-weight: 800; color: var(--accent); margin-bottom: 8px; margin-top: 18px;"><i class="fa-solid fa-lock-open"></i> بيانات الاسترداد المسلمة من المشتري (للمشرف فقط):</h4>
+                                <div class="credentials-box" style="border-color: var(--warning);">
+                                    <i class="fa-solid fa-shield-halved" style="position: absolute; left: 15px; top: 15px; font-size: 24px; color: rgba(255, 171, 0, 0.25);"></i>
+                                    {{ order.buyer_recovery_data }}
+                                </div>
+                            {% elif order.buyer_recovery_data and user.name == order.seller_name %}
+                                <div style="margin-top: 18px; background: rgba(0, 240, 255, 0.03); border: 1px solid var(--accent); padding: 16px; border-radius: 12px;">
+                                    <p style="color: var(--accent); font-weight: 800; margin-bottom: 6px;"><i class="fa-solid fa-hourglass"></i> تم تسليم بيانات الحساب من المشتري للإدارة.</p>
+                                    <p style="color: var(--text-secondary); font-size: 13px; font-weight: 600;">سيتم إرسال بيانات الحساب إليك فور تأكيد المشرف وإغلاق النزاع.</p>
+                                </div>
+                            {% endif %}
+                        {% endif %}
 
                     <!-- 6. مسترجع -->
                     {% elif order.status == 'Refunded' %}
@@ -657,10 +703,9 @@
                         {% endfor %}
                     </div>
 
-                    <!-- إرسال رسالة -->
-                    <form method="POST" class="chat-form">
-                        <input type="hidden" name="action" value="send_message">
-                        <input type="text" name="content" class="chat-input" placeholder="اكتب رسالة للطرف الآخر أو للوسيط..." required autocomplete="off">
+                    <!-- إرسال رسالة عبر AJAX -->
+                    <form class="chat-form" id="chatForm" onsubmit="return sendMessage(event)">
+                        <input type="text" id="chatInput" class="chat-input" placeholder="اكتب رسالة للطرف الآخر أو للوسيط..." required autocomplete="off">
                         <button type="submit" class="btn btn-primary btn-sm" style="padding: 12px 20px;"><i class="fa-solid fa-paper-plane"></i></button>
                     </form>
                 </div>
@@ -669,15 +714,186 @@
     </main>
 
     <footer class="footer">
+        <div style="display: flex; justify-content: center; gap: 30px; flex-wrap: wrap; margin-bottom: 10px;">
+            <a href="/" style="color: var(--text-secondary); text-decoration: none; font-weight: 700; font-size: 14px;"><i class="fa-solid fa-house"></i> الرئيسية</a>
+            <a href="/accounts" style="color: var(--text-secondary); text-decoration: none; font-weight: 700; font-size: 14px;"><i class="fa-solid fa-gamepad"></i> الحسابات المعروضة</a>
+            <a href="/sell" style="color: var(--text-secondary); text-decoration: none; font-weight: 700; font-size: 14px;"><i class="fa-solid fa-tags"></i> بيع حساب</a>
+            <a href="/terms" style="color: var(--primary); text-decoration: none; font-weight: 700; font-size: 14px;"><i class="fa-solid fa-file-contract"></i> الشروط والأحكام</a>
+        </div>
         <p>جميع الحقوق محفوظة © 2026 لـ منصة <span>وسيط</span> لبيع الحسابات بأمان.</p>
     </footer>
 
-    <!-- سكريبت لجعل الشات ينزل لآخر رسالة تلقائياً -->
+    <!-- سكريبت الشات المباشر (AJAX) والتايمر والتحديث التلقائي -->
     <script>
-        // Auto-scroll chat to bottom
-        const chatMessages = document.getElementById('chatMessages');
-        if (chatMessages) {
-            chatMessages.scrollTop = chatMessages.scrollHeight;
+        const ORDER_ID = {{ order.id }};
+        const ORDER_STATUS = '{{ order.status }}';
+        const BUYER_NAME = {{ order.buyer_name|tojson }};
+        const SELLER_NAME = {{ order.seller_name|tojson }};
+        const CURRENT_USER = {{ user.name|tojson }};
+        let lastMessageId = 0;
+        let previousOrderStatus = ORDER_STATUS;
+        
+        // Poll for order status changes every 10 seconds
+        setInterval(function() {
+            fetch('/api/get_order_status/' + ORDER_ID)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.status !== previousOrderStatus) {
+                        location.reload();
+                    }
+                })
+                .catch(err => {});
+        }, 10000);
+        
+        // Get current highest message id on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            initLastMessageId();
+            scrollChatToBottom();
+            
+            // Start polling for new messages every 3 seconds
+            setInterval(pollMessages, 3000);
+        });
+        
+        function initLastMessageId() {
+            const messages = document.querySelectorAll('.chat-bubble');
+            let maxId = 0;
+            // Try to extract ID from data attribute, or just use count
+            messages.forEach((el, index) => {
+                const dataId = el.getAttribute('data-msg-id');
+                if (dataId && parseInt(dataId) > maxId) {
+                    maxId = parseInt(dataId);
+                }
+            });
+            if (maxId > 0) {
+                lastMessageId = maxId;
+            } else {
+                // Fallback: use number of messages rendered as initial count
+                lastMessageId = messages.length;
+            }
+        }
+        
+        function scrollChatToBottom() {
+            const container = document.getElementById('chatMessages');
+            if (container) {
+                container.scrollTop = container.scrollHeight;
+            }
+        }
+        
+        function sendMessage(event) {
+            event.preventDefault();
+            const input = document.getElementById('chatInput');
+            const content = input.value.trim();
+            if (!content) return false;
+            
+            // Disable input while sending
+            input.disabled = true;
+            
+            fetch('/api/send_message', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    order_id: ORDER_ID,
+                    content: content
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    input.value = '';
+                    // Immediately append the sent message
+                    appendMessage(data.message);
+                    input.focus();
+                } else {
+                    console.error('Error sending message:', data.error);
+                }
+            })
+            .catch(err => {
+                console.error('Fetch error:', err);
+            })
+            .finally(() => {
+                input.disabled = false;
+            });
+            
+            return false;
+        }
+        
+        function pollMessages() {
+            fetch('/api/get_messages/' + ORDER_ID)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.messages) {
+                    const currentCount = document.querySelectorAll('.chat-bubble').length;
+                    
+                    // If new messages exist beyond what we have rendered
+                    if (data.messages.length > currentCount) {
+                        // Only append messages we haven't rendered yet
+                        const newMessages = data.messages.slice(currentCount);
+                        newMessages.forEach(msg => {
+                            appendMessage(msg);
+                        });
+                    }
+                }
+            })
+            .catch(err => {
+                // Silently fail polling - don't spam console
+            });
+        }
+        
+        function appendMessage(msg) {
+            const container = document.getElementById('chatMessages');
+            
+            // Remove "no messages" placeholder if it exists
+            const placeholder = container.querySelector('p');
+            if (placeholder && container.children.length === 1 && placeholder.tagName === 'P') {
+                container.innerHTML = '';
+            }
+            
+            let bubbleClass = 'bubble-buyer';
+            if (msg.sender === SELLER_NAME) {
+                bubbleClass = 'bubble-seller';
+            }
+            if (msg.sender === 'admin') {
+                bubbleClass = 'bubble-admin';
+            }
+            
+            const isBuyer = msg.sender === BUYER_NAME;
+            const isSeller = msg.sender === SELLER_NAME;
+            const isAdmin = msg.sender === 'admin';
+            
+            let senderLabel = msg.sender;
+            let iconHtml = '<i class="fa-solid fa-user"></i>';
+            if (isAdmin) {
+                iconHtml = '<i class="fa-solid fa-user-shield"></i>';
+            }
+            
+            let roleSuffix = '';
+            if (isBuyer) roleSuffix = '(المشتري)';
+            if (isSeller) roleSuffix = '(البائع)';
+            if (isAdmin) roleSuffix = '(الوسيط 🛡️)';
+            
+            const bubble = document.createElement('div');
+            bubble.className = 'chat-bubble ' + bubbleClass;
+            bubble.setAttribute('data-msg-id', msg.id || '');
+            
+            bubble.innerHTML = `
+                <span class="chat-bubble-sender">
+                    ${iconHtml}
+                    ${senderLabel} ${roleSuffix}
+                </span>
+                <div style="font-weight: 600;">${escapeHtml(msg.content)}</div>
+                <span class="chat-time">${msg.time}</span>
+            `;
+            
+            container.appendChild(bubble);
+            scrollChatToBottom();
+        }
+        
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
         }
         
         // Timer countdown

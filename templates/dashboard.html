@@ -210,6 +210,7 @@
                         <i class="fa-solid fa-wallet"></i>
                         <span>الرصيد: {{ "{:,.2f}".format(current_user_obj.balance) }} ريال</span>
                     </a>
+                    {% include 'notification_bell.html' %}
                     <a href="/dashboard" class="nav-link active" style="color: var(--primary);"><i class="fa-solid fa-user"></i> {{ current_user_obj.name }}</a>
                     {% if current_user_obj.is_admin %}
                         <a href="/admin/disputes" class="btn btn-accent btn-sm"><i class="fa-solid fa-user-shield"></i> لوحة الإدارة</a>
@@ -383,8 +384,44 @@
     </main>
 
     <footer class="footer">
+        <div style="display: flex; justify-content: center; gap: 30px; flex-wrap: wrap; margin-bottom: 10px;">
+            <a href="/" style="color: var(--text-secondary); text-decoration: none; font-weight: 700; font-size: 14px;"><i class="fa-solid fa-house"></i> الرئيسية</a>
+            <a href="/accounts" style="color: var(--text-secondary); text-decoration: none; font-weight: 700; font-size: 14px;"><i class="fa-solid fa-gamepad"></i> الحسابات المعروضة</a>
+            <a href="/sell" style="color: var(--text-secondary); text-decoration: none; font-weight: 700; font-size: 14px;"><i class="fa-solid fa-tags"></i> بيع حساب</a>
+            <a href="/terms" style="color: var(--primary); text-decoration: none; font-weight: 700; font-size: 14px;"><i class="fa-solid fa-file-contract"></i> الشروط والأحكام</a>
+        </div>
         <p>جميع الحقوق محفوظة © 2026 لـ منصة <span>وسيط</span> لبيع الحسابات بأمان.</p>
     </footer>
 
+    <!-- Auto-refresh polling for page data -->
+    <script>
+        // Auto-refresh the page when there are status changes (every 15 seconds)
+        let previousOrderCount = document.querySelectorAll('.order-row').length;
+        
+        setInterval(function() {
+            fetch(window.location.href)
+                .then(response => response.text())
+                .then(html => {
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+                    const newOrderCount = doc.querySelectorAll('.order-row').length;
+                    const newAlerts = doc.querySelector('.alerts-container');
+                    const currentAlerts = document.querySelector('.alerts-container');
+                    
+                    // Check if orders changed or new flash messages
+                    if (newOrderCount !== previousOrderCount) {
+                        location.reload();
+                    }
+                    
+                    // Check if there are new alerts/flash messages
+                    if (newAlerts && newAlerts.innerHTML !== (currentAlerts ? currentAlerts.innerHTML : '')) {
+                        location.reload();
+                    }
+                })
+                .catch(err => {
+                    // silent fail
+                });
+        }, 15000);
+    </script>
 </body>
 </html>

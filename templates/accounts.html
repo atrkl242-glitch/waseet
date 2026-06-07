@@ -186,6 +186,7 @@
                         <i class="fa-solid fa-wallet"></i>
                         <span>الرصيد: {{ "{:,.2f}".format(current_user_obj.balance) }} ريال</span>
                     </a>
+                    {% include 'notification_bell.html' %}
                     <a href="/dashboard" class="nav-link" style="color: var(--primary);"><i class="fa-solid fa-user"></i> {{ current_user_obj.name }}</a>
                     {% if current_user_obj.is_admin %}
                         <a href="/admin/disputes" class="btn btn-accent btn-sm"><i class="fa-solid fa-user-shield"></i> لوحة الإدارة</a>
@@ -214,7 +215,14 @@
 
     <main class="main-content container">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; flex-wrap: wrap; gap: 15px;">
-            <h1 style="font-size: 32px; font-weight: 900; background: linear-gradient(135deg, white, var(--text-secondary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;"><i class="fa-solid fa-gamepad"></i> الحسابات المعروضة</h1>
+            <h1 style="font-size: 32px; font-weight: 900; background: linear-gradient(135deg, white, var(--text-secondary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                <i class="fa-solid fa-gamepad"></i> 
+                {% if search_query %}
+                    نتائج البحث: "{{ search_query }}"
+                {% else %}
+                    الحسابات المعروضة
+                {% endif %}
+            </h1>
             <a href="/sell" class="btn btn-primary"><i class="fa-solid fa-circle-plus"></i> اعرض حسابك للبيع</a>
         </div>
 
@@ -306,13 +314,18 @@
                             <div class="price-label">السعر شامل الضمان</div>
                         </div>
 
-                        {% if current_user_obj and current_user_obj.name == account.seller %}
-                            <button class="btn btn-secondary btn-sm" disabled style="cursor: not-allowed; opacity: 0.6;"><i class="fa-solid fa-user-lock"></i> حسابك المعروض</button>
-                        {% else %}
-                            <form method="POST" action="/order/create/{{ account.id }}">
-                                <button type="submit" class="btn btn-primary btn-sm"><i class="fa-solid fa-shield-halved"></i> شراء آمن</button>
-                            </form>
-                        {% endif %}
+                        <div style="display: flex; gap: 8px; align-items: center;">
+                            {% if current_user_obj and current_user_obj.name == account.seller %}
+                                <button class="btn btn-secondary btn-sm" disabled style="cursor: not-allowed; opacity: 0.6;"><i class="fa-solid fa-user-lock"></i> حسابك المعروض</button>
+                            {% elif current_user_obj %}
+                                <form method="POST" action="/order/create/{{ account.id }}">
+                                    <button type="submit" class="btn btn-primary btn-sm"><i class="fa-solid fa-shield-halved"></i> شراء آمن</button>
+                                </form>
+                                <button class="report-btn" onclick="openReportModal({{ account.id }})" title="الإبلاغ عن هذا الإعلان"><i class="fa-solid fa-flag"></i> إبلاغ</button>
+                            {% else %}
+                                <a href="/login" class="btn btn-primary btn-sm"><i class="fa-solid fa-shield-halved"></i> شراء آمن</a>
+                            {% endif %}
+                        </div>
                     </div>
                 </div>
             {% else %}
@@ -326,8 +339,229 @@
     </main>
 
     <footer class="footer">
+        <div style="display: flex; justify-content: center; gap: 30px; flex-wrap: wrap; margin-bottom: 10px;">
+            <a href="/" style="color: var(--text-secondary); text-decoration: none; font-weight: 700; font-size: 14px;"><i class="fa-solid fa-house"></i> الرئيسية</a>
+            <a href="/accounts" style="color: var(--text-secondary); text-decoration: none; font-weight: 700; font-size: 14px;"><i class="fa-solid fa-gamepad"></i> الحسابات المعروضة</a>
+            <a href="/sell" style="color: var(--text-secondary); text-decoration: none; font-weight: 700; font-size: 14px;"><i class="fa-solid fa-tags"></i> بيع حساب</a>
+            <a href="/terms" style="color: var(--primary); text-decoration: none; font-weight: 700; font-size: 14px;"><i class="fa-solid fa-file-contract"></i> الشروط والأحكام</a>
+        </div>
         <p>جميع الحقوق محفوظة © 2026 لـ منصة <span>وسيط</span> لبيع الحسابات بأمان.</p>
     </footer>
 
+    <!-- Report Modal -->
+    <div id="reportModal" class="modal-overlay" style="display: none;">
+        <div class="modal-container">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-flag"></i> الإبلاغ عن إعلان مخالف</h3>
+                <button class="modal-close" onclick="closeReportModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p style="color: var(--text-secondary); margin-bottom: 20px; font-weight: 600;">يرجى كتابة سبب البلاغ بتفصيل لمساعدة الإدارة على مراجعة الإعلان المخالف.</p>
+                <input type="hidden" id="reportAccountId" value="">
+                <div class="form-group">
+                    <label class="form-label"><i class="fa-solid fa-circle-exclamation"></i> سبب البلاغ</label>
+                    <textarea id="reportReason" class="form-input" rows="4" placeholder="اكتب سبب البلاغ هنا... (مثلاً: حساب غير حقيقي، محتوى غير لائق، احتيال...)" style="padding-right: 16px; min-height: 100px;"></textarea>
+                </div>
+                <div id="reportError" style="color: var(--danger); font-weight: 700; margin-bottom: 12px; display: none;"></div>
+                <div id="reportSuccess" style="color: var(--primary); font-weight: 700; margin-bottom: 12px; display: none;"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeReportModal()">إلغاء</button>
+                <button class="btn btn-primary" onclick="submitReport()" id="reportSubmitBtn"><i class="fa-solid fa-paper-plane"></i> إرسال البلاغ</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Report Buttons Style -->
+    <style>
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(6px);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.2s ease;
+        }
+        .modal-container {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 24px;
+            padding: 30px;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            animation: slideIn 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 15px;
+        }
+        .modal-header h3 {
+            font-size: 20px;
+            font-weight: 900;
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .modal-header h3 i {
+            color: var(--warning);
+        }
+        .modal-close {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            font-size: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+        .modal-close:hover {
+            background: rgba(255, 23, 68, 0.1);
+            border-color: var(--danger);
+            color: var(--danger);
+        }
+        .modal-body {
+            margin-bottom: 20px;
+        }
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            border-top: 1px solid var(--border-color);
+            padding-top: 20px;
+        }
+        .report-btn {
+            background: rgba(255, 23, 68, 0.06);
+            border: 1px solid rgba(255, 23, 68, 0.15);
+            color: var(--danger);
+            padding: 6px 14px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+        .report-btn:hover {
+            background: rgba(255, 23, 68, 0.12);
+            border-color: var(--danger);
+            transform: translateY(-2px);
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+    </style>
+
+    <script>
+        // Report Modal Functions
+        function openReportModal(accountId) {
+            document.getElementById('reportAccountId').value = accountId;
+            document.getElementById('reportReason').value = '';
+            document.getElementById('reportError').style.display = 'none';
+            document.getElementById('reportSuccess').style.display = 'none';
+            document.getElementById('reportSubmitBtn').disabled = false;
+            document.getElementById('reportSubmitBtn').innerHTML = '<i class="fa-solid fa-paper-plane"></i> إرسال البلاغ';
+            document.getElementById('reportModal').style.display = 'flex';
+        }
+        
+        function closeReportModal() {
+            document.getElementById('reportModal').style.display = 'none';
+        }
+        
+        function submitReport() {
+            const accountId = document.getElementById('reportAccountId').value;
+            const reason = document.getElementById('reportReason').value.trim();
+            const errorDiv = document.getElementById('reportError');
+            const successDiv = document.getElementById('reportSuccess');
+            const submitBtn = document.getElementById('reportSubmitBtn');
+            
+            errorDiv.style.display = 'none';
+            successDiv.style.display = 'none';
+            
+            if (!reason || reason.length < 5) {
+                errorDiv.textContent = 'يرجى كتابة سبب البلاغ بتفصيل (5 أحرف على الأقل)';
+                errorDiv.style.display = 'block';
+                return;
+            }
+            
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جاري الإرسال...';
+            
+            fetch('/api/report_seller', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ account_id: parseInt(accountId), reason: reason })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    successDiv.textContent = data.message;
+                    successDiv.style.display = 'block';
+                    submitBtn.innerHTML = '<i class="fa-solid fa-check"></i> تم الإرسال';
+                    setTimeout(closeReportModal, 2500);
+                } else {
+                    errorDiv.textContent = data.error || 'حدث خطأ أثناء إرسال البلاغ';
+                    errorDiv.style.display = 'block';
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> إرسال البلاغ';
+                }
+            })
+            .catch(err => {
+                errorDiv.textContent = 'حدث خطأ في الاتصال بالخادم';
+                errorDiv.style.display = 'block';
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> إرسال البلاغ';
+            });
+        }
+
+        // Close modal on overlay click
+        document.addEventListener('click', function(e) {
+            if (e.target.classList.contains('modal-overlay')) {
+                closeReportModal();
+            }
+        });
+
+        // Auto-refresh polling for new accounts
+        let previousAccountCount = document.querySelectorAll('.account-card').length;
+        let previousAlertHtml = document.querySelector('.alerts-container') ? document.querySelector('.alerts-container').innerHTML : '';
+        
+        setInterval(function() {
+            fetch(window.location.href)
+                .then(response => response.text())
+                .then(html => {
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+                    const newCount = doc.querySelectorAll('.account-card').length;
+                    const newAlertDiv = doc.querySelector('.alerts-container');
+                    const newAlertHtml = newAlertDiv ? newAlertDiv.innerHTML : '';
+                    
+                    if (newCount !== previousAccountCount || newAlertHtml !== previousAlertHtml) {
+                        location.reload();
+                    }
+                })
+                .catch(err => {});
+        }, 20000);
+    </script>
 </body>
 </html>

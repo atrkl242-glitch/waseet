@@ -180,6 +180,7 @@
                         <i class="fa-solid fa-wallet"></i>
                         <span>الرصيد: {{ "{:,.2f}".format(current_user_obj.balance) }} ريال</span>
                     </a>
+                    {% include 'notification_bell.html' %}
                     <a href="/dashboard" class="nav-link" style="color: var(--primary);"><i class="fa-solid fa-user"></i> {{ current_user_obj.name }}</a>
                     {% if current_user_obj.is_admin %}
                         <a href="/admin/disputes" class="btn btn-accent btn-sm active"><i class="fa-solid fa-user-shield"></i> لوحة الإدارة</a>
@@ -247,7 +248,9 @@
         <!-- أزرار التبويبات التفاعلية -->
         <div class="admin-tabs">
             <button class="tab-btn active" onclick="openTab(event, 'tab-disputes')"><i class="fa-solid fa-triangle-exclamation"></i> النزاعات النشطة ({{ disputed_orders|length }})</button>
+            <button class="tab-btn" onclick="openTab(event, 'tab-recovery')"><i class="fa-solid fa-rotate-left"></i> استرداد الحسابات ({{ recovery_orders|length }})</button>
             <button class="tab-btn" onclick="openTab(event, 'tab-withdrawals')"><i class="fa-solid fa-money-bill-transfer"></i> طلبات السحب ({{ all_withdrawals|selectattr('status', 'equalto', 'Pending')|list|length }})</button>
+            <button class="tab-btn" onclick="openTab(event, 'tab-reports')"><i class="fa-solid fa-flag"></i> البلاغات <span class="badge badge-danger" style="font-size: 11px; padding: 2px 8px;">{{ unread_reports_count }}</span></button>
             <button class="tab-btn" onclick="openTab(event, 'tab-users')"><i class="fa-solid fa-users-gear"></i> إدارة الأعضاء ({{ all_users|length }})</button>
             <button class="tab-btn" onclick="openTab(event, 'tab-orders')"><i class="fa-solid fa-list-check"></i> سجل كافة الطلبات ({{ all_orders|length }})</button>
         </div>
@@ -319,6 +322,68 @@
             </section>
         </div>
 
+        <!-- 5. تبويب استرداد الحسابات (Awaiting_Buyer_Recovery) -->
+        <div id="tab-recovery" class="tab-content">
+            <section class="admin-section" style="border-color: rgba(255, 171, 0, 0.35);">
+                <h2 class="admin-title" style="color: #ffd54f;"><i class="fa-solid fa-rotate-left"></i> استرداد الحسابات - بانتظار بيانات المشتري</h2>
+                <div style="overflow-x: auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>رقم الطلب</th>
+                                <th>السلعة / اللعبة</th>
+                                <th>المشتري</th>
+                                <th>البائع</th>
+                                <th>المبلغ</th>
+                                <th>بيانات الاسترداد من المشتري</th>
+                                <th>تاريخ الطلب</th>
+                                <th>الإجراء النهائي</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for order in recovery_orders %}
+                                <tr>
+                                    <td>#{{ order.id }}</td>
+                                    <td><strong style="color: white;">{{ order.account.game }}</strong></td>
+                                    <td>{{ order.buyer_name }}</td>
+                                    <td>{{ order.seller_name }}</td>
+                                    <td style="color: var(--primary); font-weight: 800;">{{ order.price }} ريال</td>
+                                    <td style="font-size: 12px; max-width: 200px; word-wrap: break-word; direction: ltr; text-align: left;">
+                                        {% if order.buyer_recovery_data %}
+                                            <div style="background: rgba(0,0,0,0.3); padding: 8px; border-radius: 8px; font-family: monospace; font-size: 11px; color: #a5f3fc; white-space: pre-wrap;">
+                                                {{ order.buyer_recovery_data }}
+                                            </div>
+                                        {% else %}
+                                            <span style="color: var(--text-muted); font-weight: 700;">
+                                                <i class="fa-solid fa-hourglass"></i> بانتظار إدخال المشتري
+                                            </span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ order.created_at.strftime('%Y-%m-%d') }}</td>
+                                    <td>
+                                        {% if order.buyer_recovery_data %}
+                                            <form method="POST" onsubmit="return confirm('هل أنت متأكد من إغلاق النزاع؟ سيتم إعادة المبلغ للمشتري وإرسال بيانات الحساب المستردة للبائع.');">
+                                                <input type="hidden" name="order_id" value="{{ order.id }}">
+                                                <input type="hidden" name="action" value="confirm_recovery">
+                                                <button type="submit" class="btn btn-primary btn-sm"><i class="fa-solid fa-circle-check"></i> تأكيد استلام الحساب وإغلاق النزاع</button>
+                                            </form>
+                                        {% else %}
+                                            <span style="color: var(--text-muted); font-size: 12px; font-weight: 700;">⚠️ يرجى الانتظار حتى يرسل المشتري البيانات</span>
+                                        {% endif %}
+                                        <a href="/order/{{ order.id }}" class="btn btn-secondary btn-sm" style="margin-top: 6px;"><i class="fa-regular fa-comments"></i> دخول الشات</a>
+                                    </td>
+                                </tr>
+                            {% else %}
+                                <tr>
+                                    <td colspan="8" style="text-align: center; color: var(--text-muted); padding: 30px 0; font-weight: 700;"><i class="fa-solid fa-check-circle" style="font-size: 24px; display: block; margin-bottom: 10px; color: var(--primary);"></i> لا توجد طلبات استرداد حالياً. جميع النزاعات تم حلها! ✨</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+
         <!-- 2. تبويب طلبات سحب الرصيد -->
         <div id="tab-withdrawals" class="tab-content">
             <section class="admin-section" style="border-color: rgba(0, 240, 255, 0.35);">
@@ -381,7 +446,65 @@
             </section>
         </div>
 
-        <!-- 3. تبويب إدارة الأعضاء -->
+        <!-- 3. تبويب البلاغات (Reports) -->
+        <div id="tab-reports" class="tab-content">
+            <section class="admin-section" style="border-color: rgba(255, 145, 0, 0.35);">
+                <h2 class="admin-title" style="color: #ffe0b2;"><i class="fa-solid fa-flag"></i> البلاغات المقدمة من المستخدمين على الإعلانات</h2>
+                <div style="overflow-x: auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>رقم البلاغ</th>
+                                <th>المُبلِغ</th>
+                                <th>البائع المُبلَغ عنه</th>
+                                <th>سبب البلاغ</th>
+                                <th>اللعبة</th>
+                                <th>التاريخ</th>
+                                <th>الحالة</th>
+                                <th>الإجراء</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for report in all_reports %}
+                                <tr>
+                                    <td>#{{ report.id }}</td>
+                                    <td><strong style="color: white;">{{ report.reporter_name }}</strong></td>
+                                    <td><span style="color: var(--danger); font-weight: 700;">{{ report.seller_name }}</span></td>
+                                    <td style="max-width: 200px; word-wrap: break-word; font-size: 13px;">{{ report.reason }}</td>
+                                    <td>{{ report.account.game if report.account else '<span style="color: var(--text-muted);">محذوف</span>' }}</td>
+                                    <td style="font-size: 12px;">{{ report.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                                    <td>
+                                        {% if report.status == 'Pending' %}
+                                            <span class="badge badge-warning"><i class="fa-solid fa-hourglass"></i> جديد</span>
+                                        {% elif report.status == 'Reviewed' %}
+                                            <span class="badge badge-success"><i class="fa-solid fa-check"></i> تمت المراجعة</span>
+                                        {% elif report.status == 'Dismissed' %}
+                                            <span class="badge badge-info"><i class="fa-solid fa-xmark"></i> مرفوض</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if report.status == 'Pending' %}
+                                            <div class="admin-actions">
+                                                <button class="btn btn-danger btn-sm" onclick="handleReportAction({{ report.id }}, 'delete_account')"><i class="fa-solid fa-trash-can"></i> حذف الإعلان</button>
+                                                <button class="btn btn-secondary btn-sm" onclick="handleReportAction({{ report.id }}, 'dismiss')"><i class="fa-solid fa-xmark"></i> رفض البلاغ</button>
+                                            </div>
+                                        {% else %}
+                                            <span style="color: var(--text-muted); font-size: 12px; font-weight: 700;">تمت معالجة البلاغ</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% else %}
+                                <tr>
+                                    <td colspan="8" style="text-align: center; color: var(--text-muted); padding: 30px 0; font-weight: 700;"><i class="fa-solid fa-shield-check" style="font-size: 24px; display: block; margin-bottom: 10px; color: var(--primary);"></i> لا توجد بلاغات مقدمة من المستخدمين. المجتمع بأمان! 🛡️</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+
+        <!-- 4. تبويب إدارة الأعضاء -->
         <div id="tab-users" class="tab-content">
             <section class="admin-section">
                 <h2 class="admin-title"><i class="fa-solid fa-users-gear"></i> إدارة وحظر وتعديل أرصدة الأعضاء (الأمان والمراقبة)</h2>
@@ -522,11 +645,50 @@
     </main>
 
     <footer class="footer">
+        <div style="display: flex; justify-content: center; gap: 30px; flex-wrap: wrap; margin-bottom: 10px;">
+            <a href="/" style="color: var(--text-secondary); text-decoration: none; font-weight: 700; font-size: 14px;"><i class="fa-solid fa-house"></i> الرئيسية</a>
+            <a href="/accounts" style="color: var(--text-secondary); text-decoration: none; font-weight: 700; font-size: 14px;"><i class="fa-solid fa-gamepad"></i> الحسابات المعروضة</a>
+            <a href="/sell" style="color: var(--text-secondary); text-decoration: none; font-weight: 700; font-size: 14px;"><i class="fa-solid fa-tags"></i> بيع حساب</a>
+            <a href="/terms" style="color: var(--primary); text-decoration: none; font-weight: 700; font-size: 14px;"><i class="fa-solid fa-file-contract"></i> الشروط والأحكام</a>
+        </div>
         <p>جميع الحقوق محفوظة © 2026 لـ منصة <span>وسيط</span> لبيع الحسابات بأمان.</p>
     </footer>
 
-    <!-- سكريبت تبديل التبويبات تفاعلياً -->
+    <!-- سكريبت تبديل التبويبات تفاعلياً وإدارة البلاغات -->
     <script>
+        function handleReportAction(reportId, action) {
+            let confirmMsg = action === 'delete_account' 
+                ? 'هل أنت متأكد من حذف هذا الإعلان المخالف بالكامل من المنصة؟'
+                : 'هل أنت متأكد من رفض هذا البلاغ وإغلاقه؟';
+            
+            if (!confirm(confirmMsg)) return;
+            
+            const btn = event.target;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جاري...';
+            
+            fetch('/api/report_action', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ report_id: reportId, action: action })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert(data.error || 'حدث خطأ');
+                    btn.disabled = false;
+                    btn.innerHTML = action === 'delete_account' ? '<i class="fa-solid fa-trash-can"></i> حذف الإعلان' : '<i class="fa-solid fa-xmark"></i> رفض البلاغ';
+                }
+            })
+            .catch(err => {
+                alert('حدث خطأ في الاتصال');
+                btn.disabled = false;
+                btn.innerHTML = action === 'delete_account' ? '<i class="fa-solid fa-trash-can"></i> حذف الإعلان' : '<i class="fa-solid fa-xmark"></i> رفض البلاغ';
+            });
+        }
+
         function openTab(evt, tabId) {
             // إخفاء كل محتويات التبويبات
             const tabContents = document.getElementsByClassName("tab-content");

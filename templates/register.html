@@ -31,6 +31,7 @@
                         <i class="fa-solid fa-wallet"></i>
                         <span>الرصيد: {{ "{:,.2f}".format(current_user_obj.balance) }} ريال</span>
                     </a>
+                    {% include 'notification_bell.html' %}
                     <a href="/dashboard" class="nav-link" style="color: var(--primary);"><i class="fa-solid fa-user"></i> {{ current_user_obj.name }}</a>
                     {% if current_user_obj.is_admin %}
                         <a href="/admin/disputes" class="btn btn-accent btn-sm"><i class="fa-solid fa-user-shield"></i> لوحة الإدارة</a>
@@ -38,7 +39,7 @@
                     <a href="/logout" class="btn btn-secondary btn-sm"><i class="fa-solid fa-right-from-bracket"></i> خروج</a>
                 {% else %}
                     <a href="/login" class="nav-link"><i class="fa-solid fa-right-to-bracket"></i> تسجيل الدخول</a>
-                    <a href="/register" class="btn btn-primary btn-sm active"><i class="fa-solid fa-user-plus"></i> إنشاء حساب</a>
+                    <a href="/register" class="btn btn-primary btn-sm"><i class="fa-solid fa-user-plus"></i> إنشاء حساب</a>
                 {% endif %}
             </div>
         </div>
@@ -92,6 +93,13 @@
                     </div>
                 </div>
                 
+                <div class="form-group" style="margin-top: 15px;">
+                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 13px; color: var(--text-secondary); font-weight: 600;">
+                        <input type="checkbox" name="accept_terms" id="accept_terms" required style="width: 18px; height: 18px; cursor: pointer; accent-color: var(--primary);">
+                        <span>أوافق على <a href="/terms" target="_blank" style="color: var(--primary); text-decoration: none; font-weight: 700;">شروط الاستخدام وإخلاء المسؤولية</a> للمنصة</span>
+                    </label>
+                </div>
+
                 <button class="btn btn-primary" type="submit" style="width: 100%; margin-top: 15px;"><i class="fa-solid fa-user-plus"></i> تسجيل جديد</button>
             </form>
 
@@ -102,6 +110,12 @@
     </main>
 
     <footer class="footer">
+        <div style="display: flex; justify-content: center; gap: 30px; flex-wrap: wrap; margin-bottom: 10px;">
+            <a href="/" style="color: var(--text-secondary); text-decoration: none; font-weight: 700; font-size: 14px;"><i class="fa-solid fa-house"></i> الرئيسية</a>
+            <a href="/accounts" style="color: var(--text-secondary); text-decoration: none; font-weight: 700; font-size: 14px;"><i class="fa-solid fa-gamepad"></i> الحسابات المعروضة</a>
+            <a href="/sell" style="color: var(--text-secondary); text-decoration: none; font-weight: 700; font-size: 14px;"><i class="fa-solid fa-tags"></i> بيع حساب</a>
+            <a href="/terms" style="color: var(--primary); text-decoration: none; font-weight: 700; font-size: 14px;"><i class="fa-solid fa-file-contract"></i> الشروط والأحكام</a>
+        </div>
         <p>جميع الحقوق محفوظة © 2026 لـ منصة <span>وسيط</span> لبيع الحسابات بأمان.</p>
     </footer>
 

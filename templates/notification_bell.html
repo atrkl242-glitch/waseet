@@ -1,0 +1,236 @@
+<!-- ==================== أيقونة الإشعارات (Bell Icon) ==================== -->
+<a href="#" class="notification-bell" id="notificationBell" onclick="toggleNotifications(event)" style="position: relative; text-decoration: none; color: var(--text-secondary); font-size: 20px; display: inline-flex; align-items: center;">
+    <i class="fa-regular fa-bell"></i>
+    <span id="notificationBadge" class="notification-badge" style="display: none; position: absolute; top: -6px; right: -6px; background: var(--danger); color: white; border-radius: 50%; width: 18px; height: 18px; font-size: 10px; font-weight: 900; display: none; align-items: center; justify-content: center; border: 2px solid var(--bg-primary); box-shadow: 0 2px 6px rgba(255, 23, 68, 0.4);"></span>
+</a>
+
+<!-- لوحة الإشعارات المنبثقة -->
+<div id="notificationPanel" class="notification-panel" style="display: none; position: absolute; top: 100%; left: 0; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 16px; width: 360px; max-height: 400px; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.6); z-index: 200; margin-top: 10px; animation: slideIn 0.2s ease;">
+    <div style="display: flex; justify-content: space-between; align-items: center; padding: 16px 18px; border-bottom: 1px solid var(--border-color);">
+        <span style="font-weight: 900; font-size: 15px; color: white;"><i class="fa-regular fa-bell"></i> الإشعارات</span>
+        <button id="markAllReadBtn" onclick="markAllNotificationsRead()" style="background: rgba(0, 255, 157, 0.08); border: 1px solid rgba(0, 255, 157, 0.15); color: var(--primary); padding: 4px 10px; border-radius: 8px; cursor: pointer; font-size: 11px; font-weight: 800;"><i class="fa-solid fa-check-double"></i> تحديد الكل مقروء</button>
+    </div>
+    <div id="notificationsList" style="padding: 8px 0;">
+        <div style="text-align: center; padding: 30px 20px; color: var(--text-muted); font-weight: 700; font-size: 13px;">
+            <i class="fa-regular fa-bell-slash" style="font-size: 24px; display: block; margin-bottom: 10px; opacity: 0.5;"></i>
+            جاري تحميل الإشعارات...
+        </div>
+    </div>
+</div>
+
+<style>
+    .notification-bell:hover {
+        color: var(--primary) !important;
+    }
+    .notification-badge {
+        animation: pulse 2s infinite;
+    }
+    .notification-panel::-webkit-scrollbar {
+        width: 4px;
+    }
+    .notification-panel::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    .notification-panel::-webkit-scrollbar-thumb {
+        background: var(--text-muted);
+        border-radius: 2px;
+    }
+    .notification-item {
+        padding: 12px 18px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+        cursor: pointer;
+        display: flex;
+        gap: 12px;
+        align-items: flex-start;
+        transition: background-color 0.2s;
+    }
+    .notification-item:hover {
+        background-color: rgba(255, 255, 255, 0.03);
+    }
+    .notification-item.unread {
+        background-color: rgba(0, 255, 157, 0.03);
+        border-right: 3px solid var(--primary);
+    }
+    .notification-item.unread:hover {
+        background-color: rgba(0, 255, 157, 0.06);
+    }
+    .notification-item .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--primary);
+        flex-shrink: 0;
+        margin-top: 6px;
+        display: none;
+    }
+    .notification-item.unread .dot {
+        display: block;
+    }
+    .notification-item .content {
+        flex: 1;
+    }
+    .notification-item .message-text {
+        font-size: 13px;
+        font-weight: 600;
+        color: #e2e8f0;
+        line-height: 1.5;
+    }
+    .notification-item .time-text {
+        font-size: 10px;
+        color: var(--text-muted);
+        margin-top: 4px;
+        font-weight: 700;
+    }
+    .notification-item .link-icon {
+        color: var(--primary);
+        font-size: 12px;
+    }
+    .notification-empty {
+        text-align: center;
+        padding: 40px 20px;
+        color: var(--text-muted);
+        font-weight: 700;
+        font-size: 13px;
+    }
+    .notification-empty i {
+        font-size: 32px;
+        display: block;
+        margin-bottom: 12px;
+        opacity: 0.4;
+    }
+    
+    @media (max-width: 480px) {
+        .notification-panel {
+            width: 300px !important;
+            left: -60px !important;
+        }
+    }
+</style>
+
+<script>
+    // ===== نظام الإشعارات المتكامل =====
+    
+    // دالة جلب الإشعارات من API
+    function fetchNotifications() {
+        fetch('/api/notifications')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    renderNotifications(data.notifications);
+                    updateNotificationBadge(data.notifications);
+                }
+            })
+            .catch(err => {});
+    }
+    
+    // دالة تحديث شارة الإشعارات (العدد الأحمر)
+    function updateNotificationBadge(notifications) {
+        const badge = document.getElementById('notificationBadge');
+        const unread = notifications.filter(n => !n.is_read).length;
+        
+        if (unread > 0) {
+            badge.style.display = 'flex';
+            badge.textContent = unread > 99 ? '99+' : unread;
+        } else {
+            badge.style.display = 'none';
+        }
+        
+        // تحديث عنوان الصفحة
+        if (unread > 0) {
+            document.title = '(' + unread + ') ' + document.title.replace(/^\(\d+\)\s*/, '');
+        } else {
+            document.title = document.title.replace(/^\(\d+\)\s*/, '');
+        }
+    }
+    
+    // دالة عرض الإشعارات في اللوحة
+    function renderNotifications(notifications) {
+        const list = document.getElementById('notificationsList');
+        
+        if (!notifications || notifications.length === 0) {
+            list.innerHTML = '<div class="notification-empty"><i class="fa-regular fa-bell-slash"></i> لا توجد إشعارات حالياً</div>';
+            return;
+        }
+        
+        let html = '';
+        notifications.forEach(n => {
+            const unreadClass = n.is_read ? '' : 'unread';
+            const linkClick = n.link ? `onclick="navigateToNotification('${n.link}', ${n.id})"` : `onclick="markNotificationRead(${n.id})"`;
+            
+            html += `
+                <div class="notification-item ${unreadClass}" ${linkClick}>
+                    <div class="dot"></div>
+                    <div class="content">
+                        <div class="message-text">${n.message}</div>
+                        <div class="time-text">${n.created_at}</div>
+                    </div>
+                    ${n.link ? '<div class="link-icon"><i class="fa-solid fa-arrow-left"></i></div>' : ''}
+                </div>
+            `;
+        });
+        
+        list.innerHTML = html;
+    }
+    
+    // دالة التنقل عبر الإشعار
+    function navigateToNotification(link, notificationId) {
+        markNotificationRead(notificationId);
+        window.location.href = link;
+    }
+    
+    // دالة تحديد إشعار كمقروء
+    function markNotificationRead(notificationId) {
+        fetch('/api/notifications/mark_read', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ notification_id: notificationId })
+        }).then(() => {
+            fetchNotifications();
+        }).catch(err => {});
+    }
+    
+    // دالة تحديد الكل مقروء
+    function markAllNotificationsRead() {
+        fetch('/api/notifications/mark_read', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({})
+        }).then(() => {
+            fetchNotifications();
+        }).catch(err => {});
+    }
+    
+    // دالة تبديل ظهور لوحة الإشعارات
+    function toggleNotifications(event) {
+        event.preventDefault();
+        event.stopPropagation();
+        
+        const panel = document.getElementById('notificationPanel');
+        const isVisible = panel.style.display === 'block';
+        
+        if (isVisible) {
+            panel.style.display = 'none';
+        } else {
+            panel.style.display = 'block';
+            fetchNotifications();
+        }
+    }
+    
+    // إغلاق لوحة الإشعارات عند الضغط خارجها
+    document.addEventListener('click', function(event) {
+        const panel = document.getElementById('notificationPanel');
+        const bell = document.getElementById('notificationBell');
+        
+        if (panel && bell) {
+            if (!bell.contains(event.target) && !panel.contains(event.target)) {
+                panel.style.display = 'none';
+            }
+        }
+    });
+    
+    // جلب الإشعارات بشكل دوري كل 30 ثانية
+    document.addEventListener('DOMContentLoaded', function() {
+        fetchNotifications();
+        setInterval(fetchNotifications, 30000);
+    });
+</script>

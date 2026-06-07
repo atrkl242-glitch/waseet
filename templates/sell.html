@@ -44,6 +44,7 @@
                         <i class="fa-solid fa-wallet"></i>
                         <span>الرصيد: {{ "{:,.2f}".format(current_user_obj.balance) }} ريال</span>
                     </a>
+                    {% include 'notification_bell.html' %}
                     <a href="/dashboard" class="nav-link" style="color: var(--primary);"><i class="fa-solid fa-user"></i> {{ current_user_obj.name }}</a>
                     {% if current_user_obj.is_admin %}
                         <a href="/admin/disputes" class="btn btn-accent btn-sm"><i class="fa-solid fa-user-shield"></i> لوحة الإدارة</a>
@@ -77,7 +78,7 @@
                 املأ تفاصيل حسابك بدقة وسيتكفل الوسيط بضمان استلامك للمبلغ فوراً بعد تأكيد المشتري للاستلام.
             </p>
 
-            <form method="POST">
+            <form method="POST" enctype="multipart/form-data">
                 <div class="form-group">
                     <label class="form-label" for="game">اللعبة الإلكترونية</label>
                     <div class="form-input-wrapper">
@@ -125,12 +126,12 @@
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label" for="image_url">رابط صورة تعبيرية للحساب (اختياري)</label>
+                    <label class="form-label" for="image_file">صورة تعبيرية للحساب (اختياري)</label>
                     <div class="form-input-wrapper">
                         <i class="fa-solid fa-image"></i>
-                        <input class="form-input" type="url" id="image_url" name="image_url" placeholder="https://example.com/image.png">
+                        <input class="form-input" type="file" id="image_file" name="image_file" accept="image/png,image/jpeg,image/jpg,image/gif,image/webp" style="text-align: right; padding: 10px;">
                     </div>
-                    <span style="color: var(--text-muted); font-size: 11px; display: block; margin-top: 5px; font-weight: 600;">يمكنك وضع رابط لصورة تحتوي على إثبات محتويات الحساب لتسريع عملية البيع.</span>
+                    <span style="color: var(--text-muted); font-size: 11px; display: block; margin-top: 5px; font-weight: 600;">اختر صورة من جهازك تعرض محتويات الحساب. الحد الأقصى: 16 ميجابايت. الصيغ المسموحة: PNG, JPG, GIF, WebP.</span>
                 </div>
 
                 <div class="form-group">
@@ -144,6 +145,12 @@
     </main>
 
     <footer class="footer">
+        <div style="display: flex; justify-content: center; gap: 30px; flex-wrap: wrap; margin-bottom: 10px;">
+            <a href="/" style="color: var(--text-secondary); text-decoration: none; font-weight: 700; font-size: 14px;"><i class="fa-solid fa-house"></i> الرئيسية</a>
+            <a href="/accounts" style="color: var(--text-secondary); text-decoration: none; font-weight: 700; font-size: 14px;"><i class="fa-solid fa-gamepad"></i> الحسابات المعروضة</a>
+            <a href="/sell" style="color: var(--text-secondary); text-decoration: none; font-weight: 700; font-size: 14px;"><i class="fa-solid fa-tags"></i> بيع حساب</a>
+            <a href="/terms" style="color: var(--primary); text-decoration: none; font-weight: 700; font-size: 14px;"><i class="fa-solid fa-file-contract"></i> الشروط والأحكام</a>
+        </div>
         <p>جميع الحقوق محفوظة © 2026 لـ منصة <span>وسيط</span> لبيع الحسابات بأمان.</p>
     </footer>
 

@@ -71,6 +71,7 @@
             text-align: center;
             position: relative;
             overflow: hidden;
+            cursor: pointer;
         }
         .feature-card:hover {
             border-color: rgba(126, 63, 242, 0.3);
@@ -107,6 +108,17 @@
             font-size: 14px;
             line-height: 1.7;
         }
+        .feature-click-hint {
+            margin-top: 16px;
+            font-size: 12px;
+            color: var(--accent);
+            font-weight: 700;
+            opacity: 0.7;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+        }
         .stats {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
@@ -142,6 +154,137 @@
             font-size: 15px;
             font-weight: 700;
         }
+
+        /* Explanation Modal Styles */
+        .explain-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(6px);
+            z-index: 1000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.2s ease;
+        }
+        .explain-overlay.active {
+            display: flex;
+        }
+        .explain-modal {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 24px;
+            padding: 35px;
+            max-width: 520px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            animation: slideIn 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        .explain-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 15px;
+        }
+        .explain-header h3 {
+            font-size: 22px;
+            font-weight: 900;
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .explain-header h3 i {
+            color: var(--primary);
+        }
+        .explain-close {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            font-size: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+        .explain-close:hover {
+            background: rgba(255, 23, 68, 0.1);
+            border-color: var(--danger);
+            color: var(--danger);
+        }
+        .explain-body {
+            color: var(--text-secondary);
+            line-height: 1.9;
+            font-size: 15px;
+            font-weight: 500;
+        }
+        .explain-body p {
+            margin-bottom: 16px;
+        }
+        .explain-body ul {
+            list-style: none;
+            padding: 0;
+        }
+        .explain-body ul li {
+            margin-bottom: 12px;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+        .explain-body ul li i {
+            color: var(--primary);
+            margin-top: 4px;
+        }
+        .explain-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            border-top: 1px solid var(--border-color);
+            padding-top: 20px;
+            margin-top: 20px;
+        }
+
+        /* Real-time counter badge */
+        .live-badge {
+            background: rgba(255, 23, 68, 0.1);
+            border: 1px solid rgba(255, 23, 68, 0.2);
+            color: var(--danger);
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            animation: pulse 2s infinite;
+        }
+        .live-badge i {
+            font-size: 8px;
+        }
+
+        /* New account flash animation */
+        .new-account-flash {
+            animation: flashGreen 2s ease;
+        }
+        @keyframes flashGreen {
+            0%, 100% { background-color: transparent; }
+            50% { background-color: rgba(0, 255, 157, 0.05); }
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
     </style>
 </head>
 <body>
@@ -149,6 +292,22 @@
     <!-- Decorative glows in background -->
     <div class="bg-glow-bubble bg-glow-1"></div>
     <div class="bg-glow-bubble bg-glow-2"></div>
+
+    <!-- Explanation Modals -->
+    <div id="explainModal" class="explain-overlay">
+        <div class="explain-modal">
+            <div class="explain-header">
+                <h3 id="explainTitle"><i class="fa-solid fa-circle-info"></i> شرح الخدمة</h3>
+                <button class="explain-close" onclick="closeExplainModal()">&times;</button>
+            </div>
+            <div class="explain-body" id="explainBody">
+                <!-- Content filled dynamically -->
+            </div>
+            <div class="explain-footer">
+                <button class="btn btn-secondary" onclick="closeExplainModal()">حسناً، فهمت</button>
+            </div>
+        </div>
+    </div>
 
     <!-- الهيدر الموحد -->
     <header class="navbar">
@@ -158,7 +317,7 @@
             </a>
             <ul class="nav-links">
                 <li><a href="/" class="nav-link active"><i class="fa-solid fa-house"></i> الرئيسية</a></li>
-                <li><a href="/accounts" class="nav-link"><i class="fa-solid fa-gamepad"></i> الحسابات المعروضة</a></li>
+                <li><a href="/accounts" class="nav-link"><i class="fa-solid fa-gamepad"></i> الحسابات المعروضة <span id="liveCount" class="live-badge" style="display: none;"><i class="fa-solid fa-circle"></i> <span id="countNum">0</span></span></a></li>
                 <li><a href="/sell" class="nav-link"><i class="fa-solid fa-tags"></i> بيع حساب</a></li>
             </ul>
             <div class="nav-user">
@@ -167,6 +326,7 @@
                         <i class="fa-solid fa-wallet"></i>
                         <span>الرصيد: {{ "{:,.2f}".format(current_user_obj.balance) }} ريال</span>
                     </a>
+                    {% include 'notification_bell.html' %}
                     <a href="/dashboard" class="nav-link" style="color: var(--primary);"><i class="fa-solid fa-user"></i> {{ current_user_obj.name }}</a>
                     {% if current_user_obj.is_admin %}
                         <a href="/admin/disputes" class="btn btn-accent btn-sm"><i class="fa-solid fa-user-shield"></i> لوحة الإدارة</a>
@@ -200,6 +360,22 @@
             <p class="hero-desc">
                 المنصة العربية الأولى المتكاملة لتداول حسابات الألعاب والخدمات الرقمية. نضمن حق المشتري والبائع من خلال نظام محفظة رقمية معلّقة ووساطة خالية من المخاطر.
             </p>
+            
+            <!-- Search Bar -->
+            <div style="max-width: 650px; margin: 0 auto 35px auto;">
+                <form action="/search" method="GET" style="display: flex; gap: 12px; align-items: center; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 16px; padding: 6px; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
+                    <div style="flex: 1; display: flex; align-items: center; padding: 0 16px; gap: 10px;">
+                        <i class="fa-solid fa-search" style="color: var(--text-muted); font-size: 18px;"></i>
+                        <input type="text" name="q" id="searchInput" placeholder="ابحث عن لعبة أو حساب... مثلاً: فورتنايت، ببجي، كود..." 
+                               style="flex: 1; background: transparent; border: none; outline: none; color: white; font-size: 16px; font-weight: 600; padding: 12px 0;"
+                               autocomplete="off" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="padding: 12px 30px; border-radius: 12px; white-space: nowrap;">
+                        <i class="fa-solid fa-magnifying-glass"></i> بحث
+                    </button>
+                </form>
+            </div>
+
             <div class="cta-buttons">
                 <a href="/accounts" class="btn btn-primary"><i class="fa-solid fa-magnifying-glass"></i> تصفح الحسابات المتاحة</a>
                 <a href="/sell" class="btn btn-secondary"><i class="fa-solid fa-tags"></i> اعرض حسابك للبيع</a>
@@ -207,22 +383,25 @@
         </section>
 
         <section class="features">
-            <h2 class="features-title">كيف تعمل منصة وساطة الآمنة؟ 🤔</h2>
+            <h2 class="features-title">كيف تعمل منصة وساطة الآمنة؟ 🤔 <span style="font-size: 14px; display: block; margin-top: 10px; -webkit-text-fill-color: var(--text-secondary); font-weight: 600;">(اضغط على أي خطوة للتفاصيل)</span></h2>
             <div class="features-grid">
-                <div class="feature-card">
+                <div class="feature-card" onclick="showExplain('buy')">
                     <div class="feature-icon"><i class="fa-solid fa-credit-card"></i></div>
                     <h3 class="feature-name">طلب الشراء وحجز الأموال</h3>
                     <p class="feature-desc">يطلب المشتري الحساب ويقوم بدفع قيمته. يتم حجز رصيد المشتري وتعليقه فوراً في نظام أمان الوسيط، ويتم تنبيه البائع بالدفع.</p>
+                    <div class="feature-click-hint"><i class="fa-solid fa-circle-info"></i> اضغط للتفاصيل</div>
                 </div>
-                <div class="feature-card">
+                <div class="feature-card" onclick="showExplain('delivery')">
                     <div class="feature-icon"><i class="fa-solid fa-key"></i></div>
                     <h3 class="feature-name">تسليم بيانات الحساب</h3>
                     <p class="feature-desc">يقوم البائع بكتابة معلومات تسجيل الدخول (الايميل، الباسورد، إلخ) في نظام الأمان المخصص، وتظهر مشفرة أو معلنة للمشتري فوراً.</p>
+                    <div class="feature-click-hint"><i class="fa-solid fa-circle-info"></i> اضغط للتفاصيل</div>
                 </div>
-                <div class="feature-card">
+                <div class="feature-card" onclick="showExplain('confirm')">
                     <div class="feature-icon"><i class="fa-solid fa-circle-check"></i></div>
                     <h3 class="feature-name">فحص الحساب وتأكيد الاستلام</h3>
                     <p class="feature-desc">يقوم المشتري بالدخول للحساب، فحص المحتويات، وتغيير البيانات لتأمين الحساب، ثم يضغط على تأكيد الاستلام لتحرير المبلغ للبائع.</p>
+                    <div class="feature-click-hint"><i class="fa-solid fa-circle-info"></i> اضغط للتفاصيل</div>
                 </div>
             </div>
         </section>
@@ -247,8 +426,164 @@
     </main>
 
     <footer class="footer">
+        <div style="display: flex; justify-content: center; gap: 30px; flex-wrap: wrap; margin-bottom: 10px;">
+            <a href="/" style="color: var(--text-secondary); text-decoration: none; font-weight: 700; font-size: 14px;"><i class="fa-solid fa-house"></i> الرئيسية</a>
+            <a href="/accounts" style="color: var(--text-secondary); text-decoration: none; font-weight: 700; font-size: 14px;"><i class="fa-solid fa-gamepad"></i> الحسابات المعروضة</a>
+            <a href="/sell" style="color: var(--text-secondary); text-decoration: none; font-weight: 700; font-size: 14px;"><i class="fa-solid fa-tags"></i> بيع حساب</a>
+            <a href="/terms" style="color: var(--primary); text-decoration: none; font-weight: 700; font-size: 14px;"><i class="fa-solid fa-file-contract"></i> الشروط والأحكام</a>
+        </div>
         <p>جميع الحقوق محفوظة © 2026 لـ منصة <span>وسيط</span> لبيع الحسابات بأمان.</p>
     </footer>
+
+    <script>
+        // ===== EXPLANATION MODALS =====
+        const explainData = {
+            buy: {
+                icon: 'fa-credit-card',
+                title: 'طلب الشراء وحجز الأموال - شرح تفصيلي',
+                body: `
+                    <p><strong>🔹 الخطوة الأولى: اختيار الحساب المناسب</strong></p>
+                    <p>تصفح الحسابات المعروضة في المتجر، واختر الحساب الذي يناسبك. يمكنك استخدام الفلاتر للبحث حسب اللعبة أو المنصة.</p>
+                    <p><strong>🔹 كيف تتم عملية الدفع والحجز؟</strong></p>
+                    <ul>
+                        <li><i class="fa-solid fa-check-circle"></i> بعد اختيار الحساب، تضغط على "شراء آمن".</li>
+                        <li><i class="fa-solid fa-check-circle"></i> يتم تحويلك إلى صفحة الطلب حيث ترى تفاصيل الصفقة.</li>
+                        <li><i class="fa-solid fa-check-circle"></i> عندما تكون مستعداً، تضغط على "تأكيد الدفع".</li>
+                        <li><i class="fa-solid fa-check-circle"></i> <strong>يتم خصم المبلغ من محفظتك فوراً</strong> وحجزه في نظام الوسيط الآمن.</li>
+                    </ul>
+                    <p><strong>🔹 لماذا هذه الطريقة آمنة؟</strong></p>
+                    <p>لأن المبلغ لا يذهب مباشرة للبائع! بل يبقى في حساب الوسيط لحين تأكيد استلام الحساب. هذا يضمن حق الطرفين: البائع يعرف أن المشتري جاد، والمشتري يعرف أن ماله محفوظ.</p>
+                    <p style="background: rgba(0, 255, 157, 0.05); padding: 12px; border-radius: 10px; border-right: 3px solid var(--primary); font-weight: 700;">💡 ملاحظة: يمكنك شحن رصيد محفظتك في أي وقت من لوحة التحكم.</p>
+                `
+            },
+            delivery: {
+                icon: 'fa-key',
+                title: 'تسليم بيانات الحساب - شرح تفصيلي',
+                body: `
+                    <p><strong>🔹 بعد تأكيد الدفع من المشتري</strong></p>
+                    <p>بمجرد أن يقوم المشتري بالدفع، يتم إرسال إشعار للبائع بأن الأموال في أمان الوسيط، ويُطلب منه تسليم بيانات الحساب.</p>
+                    <p><strong>🔹 كيف يتم تسليم البيانات؟</strong></p>
+                    <ul>
+                        <li><i class="fa-solid fa-check-circle"></i> يدخل البائع إلى صفحة الطلب.</li>
+                        <li><i class="fa-solid fa-check-circle"></i> يكتب معلومات الحساب بالكامل (البريد الإلكتروني، كلمة المرور، أي معلومات إضافية).</li>
+                        <li><i class="fa-solid fa-check-circle"></i> تظهر هذه المعلومات للمشتري فور إرسالها.</li>
+                    </ul>
+                    <p><strong>🔹 مهم جداً للبائع:</strong></p>
+                    <p>يجب تسليم بيانات <strong>صحيحة وكاملة</strong>. إذا قام المشتري بفتح نزاع بسبب بيانات خاطئة، قد يتم إعادة المبلغ له.</p>
+                    <p><strong>🔹 عداد اليومين (Timer):</strong></p>
+                    <p>عند تسليم البيانات، يبدأ عداد 48 ساعة (يومين). خلال هذه المدة يجب على المشتري تأكيد استلام الحساب. إذا انتهت المهلة دون تأكيد، <strong>يتم تحرير المبلغ تلقائياً للبائع</strong>.</p>
+                    <p style="background: rgba(126, 63, 242, 0.05); padding: 12px; border-radius: 10px; border-right: 3px solid var(--secondary); font-weight: 700;">🔒 الخصوصية: جميع بيانات الحساب تُعرض في بيئة آمنة داخل المنصة فقط.</p>
+                `
+            },
+            confirm: {
+                icon: 'fa-circle-check',
+                title: 'فحص الحساب وتأكيد الاستلام - شرح تفصيلي',
+                body: `
+                    <p><strong>🔹 دور المشتري بعد استلام البيانات</strong></p>
+                    <p>الآن حصلت على بيانات الحساب، حان وقت الفحص والتأكد!</p>
+                    <p><strong>🔹 ماذا تفعل كـ مشتري؟</strong></p>
+                    <ul>
+                        <li><i class="fa-solid fa-check-circle"></i> قم بتسجيل الدخول إلى الحساب الذي اشتريته.</li>
+                        <li><i class="fa-solid fa-check-circle"></i> افحص محتويات الحساب: المستوى، الأسلحة، الشخصيات، العملات، إلخ.</li>
+                        <li><i class="fa-solid fa-check-circle"></i> تحقق من أن كل شيء مطابق للوصف الذي نشره البائع.</li>
+                        <li><i class="fa-solid fa-check-circle"></i> <strong>قم بتغيير كلمة المرور وبيانات الأمان</strong> لتأمين الحساب بالكامل.</li>
+                    </ul>
+                    <p><strong>🔹 بعد التأكد - اضغط على "تأكيد الاستلام"</strong></p>
+                    <p>بمجرد الضغط على تأكيد الاستلام:</p>
+                    <ul>
+                        <li><i class="fa-solid fa-arrow-right"></i> <strong>يتم تحرير المبلغ</strong> من حساب الوسيط وإيداعه في محفظة البائع فوراً.</li>
+                        <li><i class="fa-solid fa-arrow-right"></i> تنتهي عملية البيع بنجاح.</li>
+                        <li><i class="fa-solid fa-arrow-right"></i> يمكنك ترك تقييم للبائع (من نجمة إلى 5 نجوم).</li>
+                    </ul>
+                    <p><strong>🔹 ماذا لو واجهت مشكلة؟</strong></p>
+                    <p>إذا كان الحساب مخالفاً للوصف أو لم تعمل بيانات الدخول، يمكنك فتح <strong>"نزاع" (Dispute)</strong>. سيقوم المشرف بالتدخل والتحقيق، وإما تحرير المبلغ لك (استرجاع) أو للبائع حسب الأدلة.</p>
+                    <p style="background: rgba(0, 240, 255, 0.05); padding: 12px; border-radius: 10px; border-right: 3px solid var(--accent); font-weight: 700;">⭐ ننصحك دائماً بتقييم البائع بعد المعاملة لمساعدة المستخدمين الآخرين.</p>
+                `
+            }
+        };
+
+        function showExplain(type) {
+            const data = explainData[type];
+            if (!data) return;
+            
+            document.getElementById('explainTitle').innerHTML = `<i class="fa-solid ${data.icon}"></i> ${data.title}`;
+            document.getElementById('explainBody').innerHTML = data.body;
+            document.getElementById('explainModal').classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeExplainModal() {
+            document.getElementById('explainModal').classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        // Close modal on overlay click
+        document.getElementById('explainModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeExplainModal();
+            }
+        });
+
+        // Close on Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeExplainModal();
+            }
+        });
+
+        // ===== LIVE ACCOUNTS POLLING (Auto-refresh) =====
+        let previousAccountIds = new Set();
+        
+        function fetchLatestAccounts() {
+            fetch('/api/latest_accounts')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.accounts) {
+                        // Update live count badge
+                        const countEl = document.getElementById('countNum');
+                        const badgeEl = document.getElementById('liveCount');
+                        if (countEl) {
+                            countEl.textContent = data.accounts.length;
+                        }
+                        if (badgeEl) {
+                            badgeEl.style.display = 'inline-flex';
+                        }
+                        
+                        // Check for new accounts (compare IDs)
+                        const currentIds = new Set(data.accounts.map(a => a.id));
+                        const hasNew = [...currentIds].some(id => !previousAccountIds.has(id));
+                        
+                        if (hasNew && previousAccountIds.size > 0) {
+                            // Show subtle notification
+                            const alertsContainer = document.querySelector('.alerts-container');
+                            if (alertsContainer) {
+                                const newAlert = document.createElement('div');
+                                newAlert.className = 'alert alert-success';
+                                newAlert.innerHTML = '<span>🆕 تم إضافة إعلانات جديدة! <a href="/accounts" style="color: inherit; font-weight: 800;">تصفح الآن</a></span>';
+                                newAlert.style.animation = 'slideIn 0.4s ease';
+                                alertsContainer.prepend(newAlert);
+                                
+                                // Auto remove after 10 seconds
+                                setTimeout(() => {
+                                    newAlert.style.opacity = '0';
+                                    newAlert.style.transition = 'opacity 0.5s';
+                                    setTimeout(() => newAlert.remove(), 500);
+                                }, 10000);
+                            }
+                        }
+                        
+                        previousAccountIds = currentIds;
+                    }
+                })
+                .catch(err => {});
+        }
+
+        // Initial fetch
+        fetchLatestAccounts();
+
+        // Poll every 15 seconds
+        setInterval(fetchLatestAccounts, 15000);
+    </script>
 
 </body>
 </html>
