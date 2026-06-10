@@ -382,12 +382,63 @@ class Notification(db.Model):
     created_at = db.Column(db.DateTime, default=db.func.now())
 
 # بناء قاعدة البيانات وإنشاء مستخدم المشرف تلقائياً
+# --- دوال مساعدة لترحيل الأعمدة المفقودة ---
+def add_missing_columns():
+    """
+    التحقق من وجود جميع الأعمدة المطلوبة في كل جدول.
+    إذا وجد عمود ناقص، يتم إضافته تلقائياً باستخدام ALTER TABLE.
+    هذا يمنع خطأ UndefinedColumn عند تشغيل الإصدار الجديد على قاعدة بيانات قديمة.
+    """
+    try:
+        inspector = db.inspect(db.engine)
+        existing_tables = inspector.get_table_names()
+        
+        # خريطة الأعمدة المطلوبة لكل جدول بناءً على موديلات SQLAlchemy
+        required_columns = {
+            'user': [
+                ('is_banned', 'BOOLEAN DEFAULT false'),
+                ('email_verified', 'BOOLEAN DEFAULT false'),
+                ('otp_code', 'VARCHAR(10)'),
+                ('otp_expiry', 'TIMESTAMP'),
+            ],
+            'account': [
+                ('platform', 'VARCHAR(50) DEFAULT \'PC\''),
+                ('tags', 'VARCHAR(500)'),
+            ],
+            'order': [
+                ('credentials_submitted_at', 'TIMESTAMP'),
+                ('buyer_recovery_data', 'TEXT'),
+                ('buyer_recovery_submitted_at', 'TIMESTAMP'),
+                ('commission_rate', 'FLOAT DEFAULT 5.0'),
+                ('commission_amount', 'FLOAT DEFAULT 0.0'),
+                ('admin_fee', 'FLOAT DEFAULT 0.0'),
+                ('dispute_resolved_by', 'VARCHAR(100)'),
+                ('dispute_winner', 'VARCHAR(100)'),
+                ('dispute_resolved_at', 'TIMESTAMP'),
+            ],
+        }
+        
+        for table_name, columns in required_columns.items():
+            if table_name not in existing_tables:
+                continue  # الجدول نفسه غير موجود، db.create_all() سينشئه
+                
+            existing_columns = [col['name'] for col in inspector.get_columns(table_name)]
+            
+            for col_name, col_type in columns:
+                if col_name not in existing_columns:
+                    try:
+                        db.engine.execute(
+                            f'ALTER TABLE {table_name} ADD COLUMN {col_name} {col_type}'
+                        )
+                        print(f'✅ تم إضافة العمود {table_name}.{col_name}')
+                    except Exception as col_err:
+                        print(f'⚠️ فشل إضافة العمود {table_name}.{col_name}: {col_err}')
+    except Exception as e:
+        print(f'⚠️ فشل التحقق من الأعمدة المفقودة: {e}')
+
 with app.app_context():
     db.create_all()
-    # التأكد من وجود جداول جديدة (للتحديثات)
-    inspector = db.inspect(db.engine)
-    if 'notification' not in inspector.get_table_names():
-        db.create_all()
+    add_missing_columns()
     # حذف أي مستخدم قديم (admin) أو أي مستخدم يملك الإيميل الجديد لتجنب تعارض البيانات
     admin_email = 'atrkl250@gmail.com'
     admin_name = 'Turki.admin'
