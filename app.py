@@ -26,6 +26,7 @@ app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD', '')
 app.config['MAIL_FROM'] = os.environ.get('MAIL_FROM', 'noreply@waseet.shop')
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp', 'svg'}
 
+# Re-trigger: Force Railway to rebuild and rebind DATABASE_URL environment variable
 # قائمة نطاقات الإيميلات المؤقتة والوهمية المعروفة
 TEMP_EMAIL_DOMAINS = {
     'temp-mail.org', 'temp-mail.cc', 'temp-mail.io', 'guerrillamail.com',
