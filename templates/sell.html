@@ -78,7 +78,15 @@
                 املأ تفاصيل حسابك بدقة وسيتكفل الوسيط بضمان استلامك للمبلغ فوراً بعد تأكيد المشتري للاستلام.
             </p>
 
-            <form method="POST" enctype="multipart/form-data">
+
+        <div class="warning-banner" style="background: linear-gradient(135deg, rgba(255, 145, 0, 0.1), rgba(255, 23, 68, 0.05)); border: 1px solid rgba(255, 145, 0, 0.3); border-radius: 16px; padding: 14px 18px; margin-bottom: 30px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+            <i class="fa-solid fa-triangle-exclamation" style="font-size: 22px; color: var(--warning);"></i>
+            <div style="flex: 1; color: var(--text-secondary); font-size: 13px; line-height: 1.7; font-weight: 600;">
+                <strong style="color: var(--warning);">⚠️ تنبيه أمان مهم:</strong> لا تقم بتحويل الأموال أو التعامل خارج منصة الوساطة. أي تعامل خارج المنصة يعرضك لخطر الاحتيال. <strong>جميع المدفوعات تتم عبر نظام الوساطة الآمن فقط.</strong>
+            </div>
+        </div>
+
+        <form method="POST" enctype="multipart/form-data">
                 <div class="form-group">
                     <label class="form-label" for="game">اللعبة الإلكترونية</label>
                     <div class="form-input-wrapper">
@@ -137,6 +145,15 @@
                 <div class="form-group">
                     <label class="form-label" for="description">وصف الحساب والمحتويات النادرة</label>
                     <textarea class="form-input" id="description" name="description" placeholder="اكتب تفاصيل الحساب، مثلاً: مستوى الحساب، عدد السكنات النادرة، الأسلحة المطورة، التقييم الحالي، إلخ..." required></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="tags">وسوم (tags) للحساب <span style="color: var(--text-muted); font-weight: 600;">(اختياري - لظهور الحسابات المشابهة)</span></label>
+                    <div class="form-input-wrapper">
+                        <i class="fa-solid fa-tags"></i>
+                        <input class="form-input" type="text" id="tags" name="tags" placeholder="مثال: نادر, سكنات, مستوى عالي, موسم 5">
+                    </div>
+                    <span style="color: var(--text-muted); font-size: 11px; display: block; margin-top: 5px; font-weight: 600;">أضف كلمات مفتاحية مفصولة بفواصل لمساعدة المشترين في العثور على حسابك بسهولة.</span>
                 </div>
 
                 <button class="btn btn-primary" type="submit" style="width: 100%; margin-top: 20px;"><i class="fa-solid fa-circle-check"></i> نشر الحساب للبيع بالوساطة</button>

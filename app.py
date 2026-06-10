@@ -1,16 +1,70 @@
 import os
+import re
+import difflib
+import random
+import string
+import smtplib
+import uuid
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+from functools import wraps
 from flask import Flask, render_template, request, redirect, session, flash, url_for, jsonify
 from flask_bcrypt import Bcrypt
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime, timedelta
-import re
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///waseet.db')
 app.secret_key = 'waseet123_secure_key'
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # حد أقصى 16 ميجابايت للصورة
+app.config['COMMISSION_RATE'] = 5.0  # نسبة عمولة المنصة 5%
+app.config['MAIL_SERVER'] = os.environ.get('MAIL_SERVER', 'smtp.gmail.com')
+app.config['MAIL_PORT'] = int(os.environ.get('MAIL_PORT', 587))
+app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME', '')
+app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD', '')
+app.config['MAIL_FROM'] = os.environ.get('MAIL_FROM', 'noreply@waseet.shop')
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp', 'svg'}
+
+# قائمة نطاقات الإيميلات المؤقتة والوهمية المعروفة
+TEMP_EMAIL_DOMAINS = {
+    'temp-mail.org', 'temp-mail.cc', 'temp-mail.io', 'guerrillamail.com',
+    'guerrillamail.net', 'guerrillamail.org', 'mailinator.com', 'mailinator.net',
+    '10minutemail.com', '10minutemail.net', 'yopmail.com', 'yopmail.fr',
+    'throwaway.email', 'throwawaymail.com', 'trashmail.com', 'trashmail.net',
+    'sharklasers.com', 'spam4.me', 'mailmetrash.com', 'mailnator.com',
+    'harakirimail.com', 'filzmail.com', 'getnada.com', 'getairmail.com',
+    'airmailbox.com', 'dispostable.com', 'maildrop.cc', 'mailexpire.com',
+    'tempail.com', 'tempmail.net', 'emailondeck.com', 'mohmal.com',
+    'mohmal.net', 'mohmal.org', 'tempr.email', 'tempemail.net',
+    'spambox.us', 'spambox.info', 'mytrashmail.com', 'trash2009.com',
+    'maileater.com', 'email-fake.com', 'fakeinbox.com', 'fakeinbox.info',
+    'fakemail.net', 'fakemailgenerator.com', 'generator.email',
+    'mintemail.com', 'wegwerfmail.de', 'wegwerfmail.net', 'deadaddress.com',
+    'emailias.com', 'eyepaste.com', 'haltospam.com', 'kulturbetrieb.info',
+    'letterboxes.org', 'mail-metro.com', 'mailexpress.top', 'mailin8r.com',
+    'mailita.tk', 'mailline.tk', 'mailtothis.com', 'myinbox.in',
+    'netzidiot.de', 'onewaymail.com', 'rcpt.at', 'receiveee.com',
+    'sneakemail.com', 'sofort-mail.de', 'spambob.com', 'spambob.net',
+    'spambob.org', 'spamcero.com', 'spamcon.org', 'spamday.com',
+    'spamex.com', 'spamfree24.org', 'spamfree.eu', 'spamgoes.com',
+    'spamherelots.com', 'spamhole.com', 'spamify.com', 'spaminator.de',
+    'spamkill.info', 'spaml.com', 'spamoff.de', 'spamsalad.com',
+    'spamserver.info', 'spamstack.net', 'spamthis.co.uk', 'spamthis.net',
+    'spamtrail.com', 'spamwc.de', 'speed.1s.fr', 'temp-mail.info',
+    'tempmail.eu', 'thespammer.net', 'thraml.com', 'trash2009.com',
+    'trashymail.com', 'uggsrock.com', 'veryrealemail.com', 'voidmail.net',
+    'weg-werf-mail.de', 'wh4f.org', 'whyspam.me', 'willhackforfood.biz',
+    'winemaven.info', 'wronghead.com', 'xagloo.com', 'xemaps.com',
+    'xents.com', 'xmaily.com', 'xoxy.net', 'yep.it', 'yogamaven.com',
+    'yopmail.fr', 'yopmail.net', 'ypmail.webarnak.com.eu.org',
+    'zippymail.info', 'zoaxe.com', 'zoemail.net', 'zumpat.com',
+    'mail1a.com', 'emailnator.com', 'hmamail.com', 'klzlk.com',
+    '24hourmail.com', 'bcaoo.com', 'demail.uk', 'developermail.com',
+    'forgetmail.com', 'inboxbear.com', 'moakt.co', 'moakt.ws',
+    'nospam.online', 'oncemail.net', 'simplelogin.co', 'tempr.email',
+    'zerobounce.net', 'burnermail.io'
+}
 
 # التأكد من وجود مجلد رفع الصور
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
@@ -22,30 +76,200 @@ db = SQLAlchemy(app)
 with app.app_context():
     db.create_all()
 
-# ==================== دالة تطبيع النص العربي للبحث ====================
+# ==================== دالة تطبيع النص العربي للبحث الذكي ====================
 def normalize_arabic_text(text):
     """
-    تطبيع النص العربي للبحث المرن:
-    - إزالة المسافات
-    - توحيد أشكال الألف (أ, إ, آ, ا) → ا
+    تطبيع النص العربي للبحث المرن الذكي:
+    - تحويل النص لحالة صغيرة وإزالة المسافات الزائدة (مع الاحتفاظ بمسافة بين الكلمات)
+    - توحيد أشكال الألف (أ, إ, آ) → ا
+    - توحيد الياء والألف المقصورة (ي, ى, ئ) → ي
     - توحيد التاء المربوطة (ة, ـة) → ه
-    - إزالة الحركات (التشكيل)
-    - إزالة علامات الترقيم
+    - إزالة الحركات والتشكيل (ًٌٍَُِّْ)
+    - إزالة الكشيدة والتطويل (ـ)
+    - إزالة علامات الترقيم والرموز غير الحروف
+    - إزالة الأحرف اللاتينية والأرقام (اختياري - نحتفظ بها للبحث في الأسماء)
     """
     if not text:
         return ''
+    # تحويل لحالة صغيرة وتنظيف المسافات
     text = text.lower().strip()
-    # إزالة المسافات
-    text = re.sub(r'\s+', '', text)
-    # توحيد الألف
-    text = re.sub(r'[أإآا]', 'ا', text)
+    # توحيد المسافات (مسافة واحدة بين الكلمات)
+    text = re.sub(r'\s+', ' ', text)
+    # توحيد الألف (أ, إ, آ) → ا
+    text = re.sub(r'[أإآ]', 'ا', text)
+    # توحيد الياء المقصورة والياء المشددة والهمزة على نبرة
+    text = re.sub(r'[ىيئ]', 'ي', text)
     # توحيد التاء المربوطة والهاء
-    text = re.sub(r'[ةـة]', 'ه', text)
-    # إزالة الحركات والتشكيل
-    text = re.sub(r'[ًٌٍَُِّْ]', '', text)
-    # إزالة علامات الترقيم والرموز
-    text = re.sub(r'[^\w\s]', '', text)
-    return text
+    text = re.sub(r'[ةۀ]', 'ه', text)
+    # إزالة الحركات والتشكيل (الفتحة والضمة والكسرة والتنوين والسكون والشدة)
+    text = re.sub(r'[ًٌٍَُِْ]', '', text)
+    # إزالة الكشيدة والتطويل
+    text = re.sub(r'[ـ\x60]', '', text)
+    # إزالة علامات الترقيم والرموز غير المرغوب فيها
+    # نحتفظ بالحروف العربية والإنكليزية والأرقام والمسافات فقط
+    text = re.sub(r'[^\w\s\u0600-\u06FF]', ' ', text)
+    # توحيد المسافات مرة أخرى بعد الإزالة
+    text = re.sub(r'\s+', ' ', text)
+    return text.strip()
+
+def fuzzy_search_score(query, text):
+    """
+    حساب درجة المطابقة الضبابية (fuzzy) بين نص البحث والنص المستهدف.
+    ترجع درجة بين 0 و 1 (1 = تطابق تام).
+    تجمع بين:
+    - المطابقة التامة للنص المُطبع
+    - مطابقة الكلمات الفردية
+    - تشابه التسلسل (SequenceMatcher)
+    - تشابه الأجزاء (ن-غرامات)
+    """
+    if not query or not text:
+        return 0.0
+    
+    query_norm = normalize_arabic_text(query)
+    text_norm = normalize_arabic_text(text)
+    
+    if not query_norm or not text_norm:
+        return 0.0
+    
+    # 1. تطابق تام (score = 1.0)
+    if query_norm == text_norm:
+        return 1.0
+    
+    # 2. النص موجود كجزء (substring) (score = 0.95)
+    if query_norm in text_norm:
+        return 0.95
+    
+    # 3. كل كلمات البحث موجودة في النص (score = 0.90)
+    query_words = query_norm.split()
+    text_words = set(text_norm.split())
+    if query_words and all(qw in text_words for qw in query_words):
+        return 0.90
+    
+    # 4. أغلب كلمات البحث موجودة (score ~ 0.75-0.85)
+    if query_words:
+        matched_words = sum(1 for qw in query_words if qw in text_words)
+        word_ratio = matched_words / len(query_words)
+        if word_ratio >= 0.6:
+            return 0.75 + (word_ratio * 0.10)
+    
+    # 5. تشابه التسلسل (SequenceMatcher) - للمطابقة التقريبية
+    similarity = difflib.SequenceMatcher(None, query_norm, text_norm).ratio()
+    
+    # 6. تشابه الأجزاء (جزء من النص يشبه جزءاً من كلمة البحث)
+    #    مثلاً "ببجي" مع "pubg" أو "ببج" مع "ببجي موبايل"
+    #    أو أخطاء إملائية مثل "فورتنايت" مع "فورتنایت"
+    
+    # أفضل تشابه جزئي بين الكلمات
+    best_partial = 0.0
+    for qw in query_words:
+        for tw in text_words:
+            # تشابه كلمة بكلمة
+            word_sim = difflib.SequenceMatcher(None, qw, tw).ratio()
+            # هل كلمة البحث موجودة كبداية لكلمة في النص؟
+            if tw.startswith(qw) or qw.startswith(tw):
+                word_sim = max(word_sim, 0.80)
+            # هل هناك تشابه كبير بين الأحرف الأولى؟
+            min_len = min(len(qw), len(tw))
+            if min_len >= 2:
+                prefix_sim = difflib.SequenceMatcher(None, qw[:min_len], tw[:min_len]).ratio()
+                word_sim = max(word_sim, prefix_sim)
+            best_partial = max(best_partial, word_sim)
+    
+    # الجمع بين تقييم التسلسل الكلي وتشابه الكلمات الجزئي
+    final_score = max(similarity * 0.6, best_partial * 0.8)
+    
+    return min(final_score, 0.89)  # الحد الأقصى 0.89 لأنه لو كان أفضل من ذلك لأمسكته الشروط أعلاه
+
+# ==================== دوال منع الإيميلات المؤقتة والتحقق ====================
+
+def is_temp_email(email):
+    """
+    التحقق مما إذا كان البريد الإلكتروني من مزود مؤقت أو وهمي معروف.
+    """
+    if not email or '@' not in email:
+        return False
+    
+    domain = email.lower().split('@')[1].strip()
+    
+    # التحقق من النطاق مباشرة
+    if domain in TEMP_EMAIL_DOMAINS:
+        return True
+    
+    # التحقق من النطاقات الفرعية (مثل sub.temp-mail.org)
+    parts = domain.split('.')
+    if len(parts) >= 2:
+        base_domain = '.'.join(parts[-2:])
+        if base_domain in TEMP_EMAIL_DOMAINS:
+            return True
+        # تحقق من النطاق مع ثلاثي
+        if len(parts) >= 3:
+            base_domain = '.'.join(parts[-3:])
+            if base_domain in TEMP_EMAIL_DOMAINS:
+                return True
+    
+    return False
+
+def generate_otp():
+    """توليد كود تحقق مكون من 4 أرقام"""
+    return ''.join(random.choices(string.digits, k=4))
+
+def send_otp_email(to_email, otp_code, username):
+    """
+    إرسال كود التحقق عبر البريد الإلكتروني.
+    تستخدم إعدادات SMTP إذا كانت متوفرة، وإلا تستخدم log للعرض.
+    """
+    subject = '🔐 كود التحقق - منصة وسيط'
+    body = f"""
+    <div dir="rtl" style="font-family: 'Segoe UI', Tahoma, sans-serif; max-width: 500px; margin: 0 auto; padding: 30px; background: linear-gradient(135deg, #0a0b12, #1a1b2e); border-radius: 20px; border: 1px solid rgba(126, 63, 242, 0.3);">
+        <div style="text-align: center; margin-bottom: 25px;">
+            <span style="font-size: 32px;">🛡️</span>
+            <h1 style="color: #0ff; font-size: 24px; margin: 10px 0;">منصة وسيط</h1>
+        </div>
+        <div style="background: rgba(7, 8, 10, 0.6); border-radius: 16px; padding: 25px; border: 1px solid rgba(255,255,255,0.05);">
+            <p style="color: #e0e0e0; font-size: 16px; line-height: 1.7;">مرحباً <strong style="color: #0ff;">{username}</strong>،</p>
+            <p style="color: #a2a8b9; font-size: 14px; line-height: 1.7;">نشكرك على إنشاء حساب في منصة وسيط. يرجى استخدام الكود التالي لتأكيد بريدك الإلكتروني:</p>
+            <div style="text-align: center; margin: 25px 0;">
+                <span style="display: inline-block; background: linear-gradient(135deg, #00ff9d, #00f0ff); color: #0a0b12; font-size: 36px; font-weight: 900; letter-spacing: 8px; padding: 12px 32px; border-radius: 12px; font-family: monospace;">{otp_code}</span>
+            </div>
+            <p style="color: #ff6b6b; font-size: 13px; font-weight: 700; text-align: center;">⚠️ هذا الكود صالح لمدة 10 دقائق فقط.</p>
+            <p style="color: #a2a8b9; font-size: 13px; line-height: 1.7; margin-top: 20px;">إذا لم تطلب إنشاء حساب في منصة وسيط، يرجى تجاهل هذا البريد.</p>
+        </div>
+        <div style="text-align: center; margin-top: 20px; color: #5a5f7a; font-size: 12px;">
+            <p>© 2026 منصة وسيط - جميع الحقوق محفوظة</p>
+            <p style="direction: ltr;">waseet.shop</p>
+        </div>
+    </div>
+    """
+    
+    try:
+        if app.config['MAIL_USERNAME'] and app.config['MAIL_PASSWORD']:
+            msg = MIMEMultipart('alternative')
+            msg['From'] = app.config['MAIL_FROM']
+            msg['To'] = to_email
+            msg['Subject'] = subject
+            msg.attach(MIMEText(body, 'html'))
+            
+            server = smtplib.SMTP(app.config['MAIL_SERVER'], app.config['MAIL_PORT'])
+            server.starttls()
+            server.login(app.config['MAIL_USERNAME'], app.config['MAIL_PASSWORD'])
+            server.sendmail(app.config['MAIL_FROM'], to_email, msg.as_string())
+            server.quit()
+        else:
+            # في وضع التطوير: نسجل الكود في console
+            print(f"""
+╔{'═'*50}╗
+║  📧 إيميل التحقق (وضع التطوير)                         ║
+║  إلى: {to_email:<40}║
+║  كود التحقق: {otp_code:<36}║
+║  صالح لمدة: 10 دقائق                                    ║
+╚{'═'*50}╝
+            """)
+            return True
+        return True
+    except Exception as e:
+        print(f'❌ فشل إرسال الإيميل إلى {to_email}: {str(e)}')
+        # في وضع التطوير، لا نفشل التسجيل بسبب فشل الإيميل
+        return True
 
 # ==================== موديل قاعدة البيانات ====================
 class User(db.Model):
@@ -56,6 +280,9 @@ class User(db.Model):
     balance = db.Column(db.Float, default=1000.0) # رصيد افتراضي للتجربة
     is_admin = db.Column(db.Boolean, default=False)
     is_banned = db.Column(db.Boolean, default=False) # حقل الحظر مضاف
+    email_verified = db.Column(db.Boolean, default=False) # هل تم التحقق من الإيميل
+    otp_code = db.Column(db.String(10), nullable=True) # كود التحقق
+    otp_expiry = db.Column(db.DateTime, nullable=True) # وقت انتهاء صلاحية الكود
 
 class Account(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -66,6 +293,7 @@ class Account(db.Model):
     platform = db.Column(db.String(50), default='PC') # المنصة: PC, Console, Mobile, Switch, VR, Other
     status = db.Column(db.String(50), default='Available') # Available, Pending, Sold
     image_url = db.Column(db.String(500), nullable=True)
+    tags = db.Column(db.String(500), nullable=True) # وسوم للحسابات المشابهة (مفصولة بفواصل)
 
 class Order(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -74,12 +302,25 @@ class Order(db.Model):
     seller_name = db.Column(db.String(100), nullable=False)
     price = db.Column(db.Float, nullable=False)
     status = db.Column(db.String(50), default='Pending_Payment') 
-    # الحالات: Pending_Payment (انتظار الدفع), Funds_Held (المبلغ معلق), Credentials_Submitted (تم تسليم الحساب), Completed (مكتمل), Disputed (متنازع عليه), Refunded (مسترجع), Awaiting_Buyer_Recovery (انتظار استرداد الحساب من المشتري)
+    # الحالات الجديدة الموحدة:
+    # Pending - بانتظار الدفع
+    # Paid_Hold - تم الدفع والمبلغ معلق في المنصة
+    # In_Dispute - تحت النزاع والفحص
+    # Completed - مكتمل وتم تسليم الأموال
+    # Refunded - مسترجع للمشتري
     credentials = db.Column(db.String(500), nullable=True) # بيانات الحساب المرسلة من البائع
     created_at = db.Column(db.DateTime, default=db.func.now())
     credentials_submitted_at = db.Column(db.DateTime, nullable=True) # وقت تسليم بيانات الحساب (للتايمر)
     buyer_recovery_data = db.Column(db.Text, nullable=True) # بيانات الحساب الحالية التي يسلمها المشتري للإدارة (استرداد)
     buyer_recovery_submitted_at = db.Column(db.DateTime, nullable=True) # وقت تسليم بيانات الاسترداد من المشتري
+    # حقول العمولة
+    commission_rate = db.Column(db.Float, default=5.0) # نسبة العمولة (%)
+    commission_amount = db.Column(db.Float, default=0.0) # قيمة العمولة المحسوبة
+    admin_fee = db.Column(db.Float, default=0.0) # رسوم إدارية إضافية (عند النزاع)
+    # حقول النزاع
+    dispute_resolved_by = db.Column(db.String(100), nullable=True) # من قام بحل النزاع
+    dispute_winner = db.Column(db.String(100), nullable=True) # لصالح من تم الحل (buyer/seller)
+    dispute_resolved_at = db.Column(db.DateTime, nullable=True) # وقت حل النزاع
     
     account = db.relationship('Account', backref='orders')
 
@@ -143,15 +384,29 @@ class Notification(db.Model):
 # بناء قاعدة البيانات وإنشاء مستخدم المشرف تلقائياً
 with app.app_context():
     db.create_all()
-    # التأكد من وجود جدول الإشعارات (للتحديثات)
+    # التأكد من وجود جداول جديدة (للتحديثات)
     inspector = db.inspect(db.engine)
     if 'notification' not in inspector.get_table_names():
         db.create_all()
+    # حذف أي مستخدم قديم (admin) أو أي مستخدم يملك الإيميل الجديد لتجنب تعارض البيانات
+    admin_email = 'atrkl250@gmail.com'
+    admin_name = 'Turki.admin'
+    old_admins = User.query.filter(
+        (User.name == 'admin') | 
+        (User.email == 'atrk1250@gmail.com') |
+        (User.name == admin_name) |
+        (User.email == admin_email)
+    ).all()
+    for old in old_admins:
+        db.session.delete(old)
+    if old_admins:
+        db.session.commit()
+
     # إنشاء مستخدم أدمن افتراضي للتجربة
-    admin_user = User.query.filter_by(name='admin').first()
+    admin_user = User.query.filter_by(name=admin_name).first()
     if not admin_user:
-        hashed = bcrypt.generate_password_hash('admin123').decode('utf-8')
-        admin = User(name='admin', email='admin@waseet.com', password=hashed, balance=100000.0, is_admin=True, is_banned=False)
+        hashed = bcrypt.generate_password_hash('Turki@7070').decode('utf-8')
+        admin = User(name=admin_name, email=admin_email, password=hashed, balance=100000.0, is_admin=True, is_banned=False, email_verified=True)
         db.session.add(admin)
         db.session.commit()
 
@@ -210,6 +465,51 @@ def inject_notifications_count():
             return {'unread_notifications_count': unread_notifications}
     return {'unread_notifications_count': 0}
 
+# ==================== دوال حساب العمولة ====================
+
+def calculate_commission(order_price, commission_rate=None):
+    """
+    حساب قيمة عمولة المنصة.
+    commission_rate: نسبة العمولة (افتراضياً 5%)
+    """
+    if commission_rate is None:
+        commission_rate = app.config['COMMISSION_RATE']
+    commission = round(order_price * (commission_rate / 100), 2)
+    return commission
+
+def apply_commission_and_release(order):
+    """
+    تطبيق خصم العمولة عند اكتمال الطلب وتحويل الباقي للبائع.
+    - يتم استقطاع عمولة المنصة (5%) تلقائياً
+    - تحويل الباقي (price - commission) إلى رصيد البائع
+    """
+    commission = calculate_commission(order.price)
+    seller_net = order.price - commission
+    
+    order.commission_amount = commission
+    order.commission_rate = app.config['COMMISSION_RATE']
+    
+    seller_user = User.query.filter_by(name=order.seller_name).first()
+    if seller_user:
+        seller_user.balance += seller_net
+    
+    order.status = 'Completed'
+    order.account.status = 'Sold'
+    
+    # إشعار للبائع بالمبلغ بعد العمولة
+    create_notification(
+        order.seller_name,
+        f'✅ تم إتمام الطلب #{order.id} بنجاح! تم إيداع {seller_net} ريال في محفظتك (بعد خصم عمولة {commission} ريال).',
+        f'/order/{order.id}'
+    )
+    
+    # إشعار للمشتري بإتمام الطلب
+    create_notification(
+        order.buyer_name,
+        f'✅ تم إتمام الطلب #{order.id} بنجاح. شكراً لاستخدامك منصة وسيط!',
+        f'/order/{order.id}'
+    )
+
 # ==================== API Upload ====================
 
 @app.route('/api/upload_image', methods=['POST'])
@@ -225,7 +525,6 @@ def upload_image():
         return {'error': 'لم يتم اختيار ملف'}, 400
     
     if file and allowed_file(file.filename):
-        import uuid
         ext = file.filename.rsplit('.', 1)[1].lower()
         unique_filename = f"{uuid.uuid4().hex}_{int(datetime.utcnow().timestamp())}.{ext}"
         filepath = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
@@ -235,12 +534,12 @@ def upload_image():
     
     return {'error': 'نوع الملف غير مسموح. الأنواع المسموحة: png, jpg, jpeg, gif, webp, svg'}, 400
 
-# ==================== التحقق من التحرير التلقائي ====================
+# ==================== التحقق من التحرير التلقائي مع العمولة ====================
 
 def check_auto_release():
     """
     التحقق من الطلبات التي انتهت صلاحية التايمر لها (يومين من تسليم بيانات الحساب)
-    وإذا لم يؤكد المشتري الاستلام، يتم تحرير المبلغ تلقائياً للبائع.
+    وإذا لم يؤكد المشتري الاستلام، يتم تحرير المبلغ تلقائياً للبائع مع خصم العمولة.
     """
     if 'user' not in session:
         return
@@ -256,9 +555,16 @@ def check_auto_release():
         if order.credentials_submitted_at:
             elapsed = now - order.credentials_submitted_at
             if elapsed >= timedelta(days=2):
+                # تطبيق العمولة والتحرير
+                commission = calculate_commission(order.price)
+                seller_net = order.price - commission
+                order.commission_amount = commission
+                order.commission_rate = app.config['COMMISSION_RATE']
+                
                 seller_user = User.query.filter_by(name=order.seller_name).first()
                 if seller_user:
-                    seller_user.balance += order.price
+                    seller_user.balance += seller_net
+                
                 order.status = 'Completed'
                 order.account.status = 'Sold'
                 auto_released_any = True
@@ -266,7 +572,7 @@ def check_auto_release():
                 # إشعار للبائع
                 create_notification(
                     order.seller_name,
-                    f'🔄 تم تحرير مبلغ {order.price} ريال تلقائياً لك لانتهاء المهلة دون تأكيد من المشتري.',
+                    f'🔄 تم تحرير {seller_net} ريال تلقائياً لك (بعد خصم عمولة {commission} ريال) لانتهاء المهلة دون تأكيد من المشتري.',
                     f'/order/{order.id}'
                 )
                 
@@ -282,13 +588,34 @@ def check_auto_release():
                     order_id=order.id,
                     sender='admin',
                     receiver=order.buyer_name,
-                    content=f'🔄 تم تحرير المبلغ تلقائياً للبائع {order.seller_name} لانتهاء المهلة (يومين) دون تأكيد الاستلام من المشتري.'
+                    content=f'🔄 تم تحرير المبلغ تلقائياً للبائع {order.seller_name} لانتهاء المهلة (يومين) دون تأكيد الاستلام من المشتري. (عمولة المنصة: {commission} ريال)'
                 )
                 db.session.add(admin_msg)
     
     if auto_released_any:
         db.session.commit()
-        flash('تم تحرير مبلغ طلب تلقائياً لانتهاء المهلة المحددة (يومين دون تأكيد استلام).', 'info')
+        flash('تم تحرير مبلغ طلب تلقائياً لانتهاء المهلة المحددة.', 'info')
+
+# ==================== دوال مساعدة للنظام الجديد ====================
+
+def get_order_display_status(order_status):
+    """
+    تحويل حالة الطلب الداخلية إلى نص عرض جميل بالعربية.
+    """
+    status_map = {
+        'Pending': 'بانتظار الدفع',
+        'Pending_Payment': 'بانتظار الدفع',
+        'Paid_Hold': 'المبلغ معلق ⏳',
+        'Funds_Held': 'المبلغ معلق ⏳',
+        'Credentials_Submitted': 'تم تسليم الحساب - بانتظار التأكيد',
+        'In_Dispute': 'تحت النزاع والفحص ⚖️',
+        'Disputed': 'تحت النزاع والفحص ⚖️',
+        'Completed': 'مكتمل ✅',
+        'Refunded': 'مسترجع ↩️',
+        'Pending': 'بانتظار الدفع 💳',
+        'Awaiting_Buyer_Recovery': 'بانتظار بيانات الاسترداد من المشتري'
+    }
+    return status_map.get(order_status, order_status)
 
 # ==================== API: الرسائل ====================
 
@@ -369,6 +696,7 @@ def api_get_order_status(order_id):
     return {
         'success': True,
         'status': order.status,
+        'display_status': get_order_display_status(order.status),
         'order_id': order.id
     }, 200
 
@@ -404,7 +732,7 @@ def api_get_messages(order_id):
         } for msg in messages]
     }, 200
 
-# ==================== API: API الإشعارات ====================
+# ==================== API: الإشعارات ====================
 
 @app.route('/api/notifications', methods=['GET'])
 def api_get_notifications():
@@ -632,20 +960,96 @@ def register():
         email_or_phone = request.form['email_or_phone'].strip()
         password = request.form['password']
         
+        # التحقق من الإيميلات المؤقتة
+        if '@' in email_or_phone:
+            if is_temp_email(email_or_phone):
+                return render_template('register.html', error='⚠️ لا يمكنك التسجيل باستخدام بريد إلكتروني مؤقت أو وهمي. يرجى استخدام بريد إلكتروني حقيقي للتحقق من حسابك.')
+        
         existing_user = User.query.filter((User.email == email_or_phone) | (User.name == name)).first()
         if existing_user:
             return render_template('register.html', error='اسم المستخدم أو البريد/الجوال مسجل بالفعل')
             
         hashed = bcrypt.generate_password_hash(password).decode('utf-8')
-        user = User(name=name, email=email_or_phone, password=hashed, balance=1000.0, is_banned=False)
+        user = User(
+            name=name,
+            email=email_or_phone,
+            password=hashed,
+            balance=1000.0,
+            is_banned=False,
+            email_verified=False
+        )
         db.session.add(user)
         db.session.commit()
         
+        # توليد وإرسال كود التحقق
+        otp = generate_otp()
+        user.otp_code = otp
+        user.otp_expiry = datetime.utcnow() + timedelta(minutes=10)
+        db.session.commit()
+        
+        # إرسال كود التحقق
+        send_otp_email(email_or_phone, otp, name)
+        
         session.permanent = True
         session['user'] = user.name
-        flash('تم إنشاء حسابك بنجاح! حصلت على 1000 ريال رصيداً تجريبياً ترحيبياً 🎁', 'success')
-        return redirect(url_for('dashboard'))
+        flash(f'تم إنشاء حسابك بنجاح! 🎁 يرجى تفعيل بريدك الإلكتروني عبر إدخال كود التحقق المرسل إلى {email_or_phone}', 'success')
+        return redirect(url_for('verify_email'))
     return render_template('register.html')
+
+@app.route('/verify_email', methods=['GET', 'POST'])
+def verify_email():
+    """صفحة إدخال كود التحقق المرسل إلى البريد الإلكتروني"""
+    if 'user' not in session:
+        return redirect(url_for('login'))
+    
+    current_user = User.query.filter_by(name=session['user']).first()
+    if not current_user:
+        session.pop('user', None)
+        return redirect(url_for('login'))
+    
+    if current_user.email_verified:
+        flash('بريدك الإلكتروني مفعل بالفعل! ✅', 'success')
+        return redirect(url_for('dashboard'))
+    
+    if request.method == 'POST':
+        otp_input = request.form.get('otp', '').strip()
+        action = request.form.get('action', '')
+        
+        # إعادة إرسال كود التحقق
+        if action == 'resend':
+            new_otp = generate_otp()
+            current_user.otp_code = new_otp
+            current_user.otp_expiry = datetime.utcnow() + timedelta(minutes=10)
+            db.session.commit()
+            send_otp_email(current_user.email, new_otp, current_user.name)
+            flash(f'✅ تم إرسال كود تحقق جديد إلى {current_user.email}', 'success')
+            return redirect(url_for('verify_email'))
+        
+        # التحقق من الكود
+        if not otp_input:
+            flash('❌ يرجى إدخال كود التحقق.', 'danger')
+            return render_template('verify_email.html', user=current_user)
+        
+        if not current_user.otp_code or current_user.otp_expiry is None:
+            flash('❌ لم يتم طلب كود تحقق. يرجى إعادة إرسال الكود.', 'danger')
+            return render_template('verify_email.html', user=current_user)
+        
+        if datetime.utcnow() > current_user.otp_expiry:
+            flash('❌ انتهت صلاحية كود التحقق. يرجى طلب كود جديد.', 'danger')
+            return render_template('verify_email.html', user=current_user)
+        
+        if otp_input == current_user.otp_code:
+            current_user.email_verified = True
+            current_user.otp_code = None
+            current_user.otp_expiry = None
+            db.session.commit()
+            flash('✅ تم تفعيل بريدك الإلكتروني بنجاح! يمكنك الآن الشراء والبيع بأمان.', 'success')
+            return redirect(url_for('dashboard'))
+        else:
+            flash('❌ كود التحقق غير صحيح. يرجى المحاولة مرة أخرى.', 'danger')
+            return render_template('verify_email.html', user=current_user)
+    
+    return render_template('verify_email.html', user=current_user)
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -683,23 +1087,36 @@ def search():
     # تطبيع نص البحث
     normalized_query = normalize_arabic_text(query)
     
-    # البحث المرن: جلب جميع الحسابات المتاحة ومقارنتها
+    # عتبة التشابه الدنيا (0.5 = 50% تشابه)
+    MATCH_THRESHOLD = 0.50
+    
+    # البحث الذكي الضبابي: جلب جميع الحسابات المتاحة ومقارنتها
     all_available = Account.query.filter_by(status='Available').all()
-    search_results = []
+    scored_results = []  # قائمة tuples (account, score)
     
     for account in all_available:
-        # تطبيع جميع الحقول للبحث
-        norm_game = normalize_arabic_text(account.game)
-        norm_desc = normalize_arabic_text(account.description or '')
-        norm_seller = normalize_arabic_text(account.seller)
-        norm_platform = normalize_arabic_text(account.platform)
+        # محاولة المطابقة في جميع الحقول المهمة
+        fields_to_check = [
+            account.game,
+            account.description or '',
+            account.seller,
+            account.platform,
+            account.tags or ''
+        ]
         
-        # البحث عن النص المُطبع في أي حقل
-        if (normalized_query in norm_game or 
-            normalized_query in norm_desc or 
-            normalized_query in norm_seller or 
-            normalized_query in norm_platform):
-            search_results.append(account)
+        best_score = 0.0
+        for field in fields_to_check:
+            score = fuzzy_search_score(query, field)
+            if score > best_score:
+                best_score = score
+        
+        # إذا تجاوزت العتبة، أضف الحساب مع درجته
+        if best_score >= MATCH_THRESHOLD:
+            scored_results.append((account, best_score))
+    
+    # ترتيب النتائج حسب درجة المطابقة (من الأعلى للأقل)
+    scored_results.sort(key=lambda x: x[1], reverse=True)
+    search_results = [item[0] for item in scored_results]
     
     all_games = db.session.query(Account.game).distinct().all()
     all_platforms = db.session.query(Account.platform).distinct().all()
@@ -718,6 +1135,7 @@ def search():
 def accounts():
     game_filter = request.args.get('game')
     platform_filter = request.args.get('platform')
+    sort_by = request.args.get('sort', 'newest')  # newest, price_asc, price_desc
     
     query = Account.query.filter_by(status='Available')
     
@@ -725,18 +1143,30 @@ def accounts():
     all_platforms = db.session.query(Account.platform).distinct().all()
     
     if game_filter:
-        # استخدام البحث المرن للعبة المحددة أيضاً
-        normalized_game = normalize_arabic_text(game_filter)
+        # استخدام البحث الذكي الضبابي للعبة المحددة
+        MATCH_THRESHOLD = 0.50
         all_accounts_for_filter = query.order_by(Account.id.desc()).all()
-        filtered = []
+        scored_results = []
+        
         for account in all_accounts_for_filter:
-            if normalized_game in normalize_arabic_text(account.game):
-                filtered.append(account)
-        all_accounts = filtered
+            score = fuzzy_search_score(game_filter, account.game)
+            if score >= MATCH_THRESHOLD:
+                scored_results.append((account, score))
+        
+        # ترتيب حسب درجة المطابقة
+        scored_results.sort(key=lambda x: x[1], reverse=True)
+        all_accounts = [item[0] for item in scored_results]
     else:
         if platform_filter:
             query = query.filter_by(platform=platform_filter)
         all_accounts = query.order_by(Account.id.desc()).all()
+    
+    # تطبيق الترتيب
+    if sort_by == 'price_asc':
+        all_accounts = sorted(all_accounts, key=lambda a: a.price)
+    elif sort_by == 'price_desc':
+        all_accounts = sorted(all_accounts, key=lambda a: a.price, reverse=True)
+    # newest هو الترتيب الافتراضي
     
     return render_template(
         'accounts.html', 
@@ -744,7 +1174,51 @@ def accounts():
         games=[g[0] for g in all_games], 
         platforms=[p[0] for p in all_platforms],
         selected_game=game_filter,
-        selected_platform=platform_filter
+        selected_platform=platform_filter,
+        current_sort=sort_by
+    )
+
+@app.route('/account/<int:account_id>')
+def account_detail(account_id):
+    """صفحة تفاصيل الحساب المعروض مع حسابات مشابهة"""
+    account = Account.query.get_or_404(account_id)
+    
+    if account.status != 'Available':
+        flash('عذراً، هذا الحساب غير متاح حالياً.', 'warning')
+        return redirect(url_for('accounts'))
+    
+    # جلب حسابات مشابهة (نفس اللعبة أو نفس الوسوم)
+    similar_accounts = []
+    if account.tags:
+        tags_list = [t.strip() for t in account.tags.split(',') if t.strip()]
+        for tag in tags_list:
+            similar = Account.query.filter(
+                Account.id != account.id,
+                Account.status == 'Available',
+                Account.tags.like(f'%{tag}%')
+            ).limit(4).all()
+            similar_accounts.extend(similar)
+    
+    # إذا ما لقينا بالوسوم، نجيب حسابات من نفس اللعبة
+    if not similar_accounts:
+        similar_accounts = Account.query.filter(
+            Account.id != account.id,
+            Account.status == 'Available',
+            Account.game == account.game
+        ).limit(4).all()
+    
+    # إزالة التكرار
+    seen_ids = set()
+    unique_similar = []
+    for a in similar_accounts:
+        if a.id not in seen_ids:
+            seen_ids.add(a.id)
+            unique_similar.append(a)
+    
+    return render_template(
+        'account_detail.html',
+        account=account,
+        similar_accounts=unique_similar[:4]
     )
 
 @app.route('/terms')
@@ -762,12 +1236,12 @@ def sell():
         description = request.form['description']
         price = float(request.form['price'])
         platform = request.form.get('platform', 'PC')
+        tags = request.form.get('tags', '').strip()
         
         image_url = None
         if 'image_file' in request.files:
             file = request.files['image_file']
             if file and file.filename and allowed_file(file.filename):
-                import uuid
                 ext = file.filename.rsplit('.', 1)[1].lower()
                 unique_filename = f"account_{uuid.uuid4().hex}_{int(datetime.utcnow().timestamp())}.{ext}"
                 filepath = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
@@ -781,6 +1255,7 @@ def sell():
             seller=session['user'],
             platform=platform,
             image_url=image_url,
+            tags=tags if tags else None,
             status='Available'
         )
         db.session.add(account)
@@ -815,7 +1290,7 @@ def dashboard():
     
     pending_balance = 0.0
     for o in sell_orders:
-        if o.status in ['Funds_Held', 'Credentials_Submitted', 'Disputed']:
+        if o.status in ['Funds_Held', 'Credentials_Submitted', 'Disputed', 'Paid_Hold', 'In_Dispute']:
             pending_balance += o.price
             
     withdrawals = WithdrawalRequest.query.filter_by(username=current_user.name).order_by(WithdrawalRequest.id.desc()).all()
@@ -921,11 +1396,16 @@ def order_details(order_id):
     if request.method == 'POST':
         action = request.form.get('action')
         
-        # 1. دفع القيمة للوسيط
-        if action == 'pay' and current_user.name == order.buyer_name and order.status == 'Pending_Payment':
+        # ===== 1. دفع القيمة للوسيط =====
+        if action == 'pay' and current_user.name == order.buyer_name and order.status in ['Pending_Payment', 'Pending']:
+            # التحقق من تفعيل البريد الإلكتروني
+            if not current_user.email_verified:
+                flash('❌ يجب تفعيل بريدك الإلكتروني أولاً قبل إتمام عملية الشراء. يرجى التحقق من بريدك.', 'danger')
+                return redirect(url_for('verify_email'))
+            
             if current_user.balance >= order.price:
                 current_user.balance -= order.price
-                order.status = 'Funds_Held'
+                order.status = 'Paid_Hold'
                 order.account.status = 'Pending'
                 
                 # إشعار للبائع بأن الدفع تم
@@ -940,8 +1420,8 @@ def order_details(order_id):
             else:
                 flash('عذراً، رصيدك غير كافٍ. يرجى شحن رصيدك التجريبي أولاً.', 'danger')
                 
-        # 2. إدخال بيانات الحساب من البائع
-        elif action == 'submit_credentials' and current_user.name == order.seller_name and order.status == 'Funds_Held':
+        # ===== 2. إدخال بيانات الحساب من البائع =====
+        elif action == 'submit_credentials' and current_user.name == order.seller_name and order.status in ['Paid_Hold', 'Funds_Held']:
             creds = request.form.get('credentials', '').strip()
             if creds:
                 order.credentials = creds
@@ -960,27 +1440,17 @@ def order_details(order_id):
             else:
                 flash('يرجى إدخال معلومات صحيحة وغير فارغة.', 'warning')
                 
-        # 3. تأكيد الاستلام من المشتري
+        # ===== 3. تأكيد الاستلام من المشتري (مع تطبيق العمولة) =====
         elif action == 'confirm_receipt' and current_user.name == order.buyer_name and order.status == 'Credentials_Submitted':
-            seller_user = User.query.filter_by(name=order.seller_name).first()
-            if seller_user:
-                seller_user.balance += order.price
-            order.status = 'Completed'
-            order.account.status = 'Sold'
-            
-            # إشعار للبائع بأن المشتري أكد الاستلام وتم تحرير المبلغ
-            create_notification(
-                order.seller_name,
-                f'✅ قام المشتري {order.buyer_name} بتأكيد استلام الحساب "{order.account.game}". تم إيداع {order.price} ريال في محفظتك.',
-                f'/order/{order.id}'
-            )
+            # تطبيق العمولة 5% واستكمال الطلب
+            apply_commission_and_release(order)
             
             db.session.commit()
-            flash('شكراً لك! تم تأكيد الاستلام بنجاح، وتحويل المبلغ فوراً إلى البائع.', 'success')
+            flash(f'شكراً لك! تم تأكيد الاستلام بنجاح. تم خصم عمولة المنصة بنسبة {app.config["COMMISSION_RATE"]}% ({order.commission_amount} ريال) وتحويل الباقي للبائع.', 'success')
             
-        # 4. فتح نزاع مع إرفاق أدلة
-        elif action == 'raise_dispute' and order.status in ['Funds_Held', 'Credentials_Submitted']:
-            order.status = 'Disputed'
+        # ===== 4. فتح نزاع مع إرفاق أدلة =====
+        elif action == 'raise_dispute' and order.status in ['Paid_Hold', 'Funds_Held', 'Credentials_Submitted']:
+            order.status = 'In_Dispute'
             
             text_evidence = request.form.get('dispute_text', '').strip()
             image_evidence = None
@@ -988,7 +1458,6 @@ def order_details(order_id):
             if 'dispute_image' in request.files:
                 file = request.files['dispute_image']
                 if file and file.filename and allowed_file(file.filename):
-                    import uuid
                     ext = file.filename.rsplit('.', 1)[1].lower()
                     unique_filename = f"dispute_{order.id}_{uuid.uuid4().hex}_{int(datetime.utcnow().timestamp())}.{ext}"
                     filepath = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
@@ -1027,7 +1496,7 @@ def order_details(order_id):
             db.session.commit()
             flash('تم فتح نزاع حول الطلب مع إرفاق الأدلة. تم إرسال تنبيه للمشرف للتدخل والمراجعة.', 'warning')
             
-        # 5. إرسال رسالة في الشات
+        # ===== 5. إرسال رسالة في الشات =====
         elif action == 'send_message':
             content = request.form.get('content', '').strip()
             if content:
@@ -1052,7 +1521,7 @@ def order_details(order_id):
                 
                 db.session.commit()
                 
-        # 6. إرسال تقييم للبائع بعد انتهاء المعاملة
+        # ===== 6. إرسال تقييم للبائع بعد انتهاء المعاملة =====
         elif action == 'submit_review' and current_user.name == order.buyer_name and order.status == 'Completed':
             rating = int(request.form.get('rating', 5))
             comment = request.form.get('comment', '').strip()
@@ -1072,12 +1541,13 @@ def order_details(order_id):
             else:
                 flash('لقد قمت بتقييم هذه المعاملة مسبقاً.', 'warning')
                 
-        # 8. تسليم بيانات استرداد الحساب من المشتري للإدارة
-        elif action == 'submit_recovery_data' and current_user.name == order.buyer_name and order.status == 'Awaiting_Buyer_Recovery':
+        # ===== 8. تسليم بيانات استرداد الحساب من المشتري للإدارة =====
+        elif action == 'submit_recovery_data' and current_user.name == order.buyer_name and order.status in ['Awaiting_Buyer_Recovery', 'In_Dispute']:
             recovery_data = request.form.get('recovery_data', '').strip()
             if recovery_data:
                 order.buyer_recovery_data = recovery_data
                 order.buyer_recovery_submitted_at = datetime.utcnow()
+                order.status = 'Awaiting_Buyer_Recovery'
                 
                 # إشعار للإدارة بأن المشتري سلم بيانات الاسترداد
                 create_notification(
@@ -1091,15 +1561,14 @@ def order_details(order_id):
             else:
                 flash('يرجى إدخال بيانات الحساب الحالية بشكل صحيح.', 'warning')
                 
-        # 9. إضافة دليل جديد للنزاع المفتوح
-        elif action == 'add_dispute_evidence' and order.status == 'Disputed':
+        # ===== 9. إضافة دليل جديد للنزاع المفتوح =====
+        elif action == 'add_dispute_evidence' and order.status in ['In_Dispute', 'Disputed']:
             text_evidence = request.form.get('dispute_text', '').strip()
             image_evidence = None
             
             if 'dispute_image' in request.files:
                 file = request.files['dispute_image']
                 if file and file.filename and allowed_file(file.filename):
-                    import uuid
                     ext = file.filename.rsplit('.', 1)[1].lower()
                     unique_filename = f"evidence_{order.id}_{uuid.uuid4().hex}_{int(datetime.utcnow().timestamp())}.{ext}"
                     filepath = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
@@ -1120,7 +1589,6 @@ def order_details(order_id):
                 )
                 db.session.add(evidence)
                 
-                # إشعار للإدارة بأنه تم إضافة أدلة جديدة للنزاع
                 create_notification(
                     'admin',
                     f'📎 قام {current_user.name} بإضافة دليل جديد إلى النزاع على الطلب #{order.id}. يرجى مراجعة الأدلة.',
@@ -1145,6 +1613,16 @@ def order_details(order_id):
         remaining = total_seconds - int(elapsed.total_seconds())
         remaining_seconds = max(0, remaining)
     
+    # حساب معلومات العمولة للعرض
+    commission_info = None
+    if order.status == 'Completed':
+        commission_info = {
+            'commission_amount': order.commission_amount or calculate_commission(order.price),
+            'commission_rate': order.commission_rate or app.config['COMMISSION_RATE'],
+            'seller_net': order.price - (order.commission_amount or calculate_commission(order.price)),
+            'admin_fee': order.admin_fee or 0
+        }
+    
     return render_template(
         'order_details.html', 
         order=order, 
@@ -1152,89 +1630,139 @@ def order_details(order_id):
         user=current_user, 
         order_review=order_review,
         dispute_evidences=dispute_evidences,
-        remaining_seconds=remaining_seconds
+        remaining_seconds=remaining_seconds,
+        commission_info=commission_info,
+        get_order_display_status=get_order_display_status
     )
+
+# ==================== Decorator حماية لوحة الإدارة ====================
+
+def admin_required(f):
+    """
+    Decorator للتحقق الصارم من هوية المستخدم وصلاحياته للوصول إلى لوحة الإدارة.
+    """
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'user' not in session:
+            flash('❌ يرجى تسجيل الدخول أولاً للوصول إلى لوحة الإدارة.', 'warning')
+            return redirect(url_for('login'))
+        
+        current_user = User.query.filter_by(name=session['user']).first()
+        if not current_user:
+            session.pop('user', None)
+            flash('❌ المستخدم غير موجود في النظام.', 'warning')
+            return redirect(url_for('login'))
+        
+        if not current_user.is_admin:
+            return render_template('403.html'), 403
+        
+        return f(current_user=current_user, *args, **kwargs)
+    return decorated_function
 
 # ==================== لوحة الإدارة (Admin Panel) ====================
 
 @app.route('/admin/disputes', methods=['GET', 'POST'])
-def admin_disputes():
-    if 'user' not in session:
-        return redirect(url_for('login'))
-        
-    current_user = User.query.filter_by(name=session['user']).first()
-    if not current_user or not current_user.is_admin:
-        flash('هذه الصفحة خاصة بالإدارة فقط.', 'danger')
-        return redirect(url_for('dashboard'))
-        
+@admin_required
+def admin_disputes(current_user):
     if request.method == 'POST':
         action = request.form.get('action')
         
-        # 1. حل النزاعات بشكل عادل:
-        #    - release: تحرير الأموال للبائع (لصالح البائع) -> Completed
-        #    - refund: إعادة الأموال للمشتري (لصالح المشتري) -> Refunded (مباشرة)
+        # ===== 1. حل النزاعات مع العمولة =====
         if action in ['release', 'refund']:
             order_id = request.form.get('order_id')
             order = Order.query.get_or_404(order_id)
+            admin_fee = float(request.form.get('admin_fee', 0))
             
-            if order.status == 'Disputed':
+            if order.status in ['In_Dispute', 'Disputed']:
+                # تسجيل معلومات حل النزاع
+                order.dispute_resolved_by = current_user.name
+                order.dispute_resolved_at = datetime.utcnow()
+                
                 if action == 'release':
-                    # لصالح البائع: تحويل الأموال المحجوزة مباشرة للبائع
+                    # لصالح البائع: تحويل الأموال المحجوزة للبائع مع خصم العمولة
+                    order.dispute_winner = 'seller'
+                    
+                    # تطبيق العمولة
+                    commission = calculate_commission(order.price)
+                    order.commission_amount = commission
+                    order.commission_rate = app.config['COMMISSION_RATE']
+                    
+                    seller_net = order.price - commission - admin_fee
+                    order.admin_fee = admin_fee
+                    
                     seller = User.query.filter_by(name=order.seller_name).first()
                     if seller:
-                        seller.balance += order.price
+                        seller.balance += seller_net
+                    
                     order.status = 'Completed'
                     order.account.status = 'Sold'
                     
                     # إشعار للبائع
                     create_notification(
                         order.seller_name,
-                        f'⚖️ تم حل النزاع لصالحك! تم إيداع {order.price} ريال في محفظتك للطلب #{order.id}.',
+                        f'⚖️ تم حل النزاع لصالحك! تم إيداع {seller_net} ريال في محفظتك (بعد خصم عمولة {commission} ريال' + (f' ورسوم إدارية {admin_fee} ريال' if admin_fee > 0 else '') + f') للطلب #{order.id}.',
                         f'/order/{order.id}'
                     )
                     
                     # إشعار للمشتري
                     create_notification(
                         order.buyer_name,
-                        f'⚖️ تم حل النزاع لصالح البائع للطلب #{order.id}. تم تحرير المبلغ للبائع.',
+                        f'⚖️ تم حل النزاع لصالح البائع للطلب #{order.id}. تم تحرير المبلغ للبائع بعد خصم العمولة.',
                         f'/order/{order.id}'
                     )
                     
                     db.session.commit()
-                    flash(f'تم حل النزاع للطلب #{order.id}: تم تحرير الأموال لصالح البائع وإغلاق الطلب كمكتمل.', 'success')
+                    flash(f'تم حل النزاع للطلب #{order.id}: تم تحرير {seller_net} ريال للبائع (بعد خصم عمولة {commission} ريال).', 'success')
                     
                 elif action == 'refund':
-                    # لصالح المشتري: إعادة الأموال مباشرة للمشتري (بدون تعقيد استرداد الحساب)
+                    # لصالح المشتري: إعادة الأموال للمشتري
+                    # إذا كان هناك تلاعب من البائع، يتم تجميد حسابه وفرض رسوم إدارية
+                    
+                    order.dispute_winner = 'buyer'
+                    
                     buyer = User.query.filter_by(name=order.buyer_name).first()
                     if buyer:
-                        buyer.balance += order.price
+                        refund_amount = order.price - admin_fee
+                        order.admin_fee = admin_fee
+                        buyer.balance += refund_amount
+                    
+                    # تجميد حساب البائع إذا ثبت تلاعبه (admin_fee > 0 يعني تلاعب)
+                    seller = User.query.filter_by(name=order.seller_name).first()
+                    if admin_fee > 0 and seller:
+                        seller.is_banned = True
+                        create_notification(
+                            order.seller_name,
+                            f'🚫 تم تجميد حسابك وحظرك من المنصة لتلاعبك بالطلب #{order.id}. تم إعادة المبلغ للمشتري وفرض رسوم إدارية.',
+                            None
+                        )
+                    
                     order.status = 'Refunded'
                     order.account.status = 'Available'
                     
                     # إشعار للمشتري
                     create_notification(
                         order.buyer_name,
-                        f'⚖️ تم حل النزاع لصالحك! تم إعادة {order.price} ريال إلى محفظتك للطلب #{order.id}.',
+                        f'⚖️ تم حل النزاع لصالحك! تم إعادة {refund_amount} ريال إلى محفظتك للطلب #{order.id}.' + (f' (تم خصم {admin_fee} ريال كرسوم إدارية)' if admin_fee > 0 else ''),
                         f'/order/{order.id}'
                     )
                     
                     # إشعار للبائع
                     create_notification(
                         order.seller_name,
-                        f'⚖️ تم حل النزاع لصالح المشتري للطلب #{order.id}. تم إعادة المبلغ للمشتري وإلغاء الطلب.',
+                        f'⚖️ تم حل النزاع لصالح المشتري للطلب #{order.id}. تم إعادة المبلغ للمشتري وإلغاء الطلب.' + (' وتم تجميد حسابك.' if admin_fee > 0 else ''),
                         f'/order/{order.id}'
                     )
                     
                     db.session.commit()
-                    flash(f'تم حل النزاع للطلب #{order.id}: تم إعادة المبلغ للمشتري وإلغاء الطلب.', 'success')
+                    flash(f'تم حل النزاع للطلب #{order.id}: تم إعادة المبلغ للمشتري' + (f' وخصم {admin_fee} ريال كرسوم إدارية' if admin_fee > 0 else '') + '.', 'success')
                     
-        # 7. تأكيد استلام الحساب من المشتري وإغلاق النزاع نهائياً (للتوافق مع الطلبات القديمة)
+        # ===== 7. تأكيد استلام الحساب من المشتري وإغلاق النزاع =====
         elif action == 'confirm_recovery':
             order_id = request.form.get('order_id')
             order = Order.query.get_or_404(order_id)
             
             if order.status == 'Awaiting_Buyer_Recovery' and order.buyer_recovery_data:
-                # إعادة المبلغ إلى محفظة المشتري
+                # إعادة المبلغ إلى محفظة المشتري (مع خصم العمولة إن أمكن)
                 buyer = User.query.filter_by(name=order.buyer_name).first()
                 if buyer:
                     buyer.balance += order.price
@@ -1260,6 +1788,9 @@ def admin_disputes():
                 )
                 db.session.add(admin_msg_buyer)
                 
+                order.dispute_resolved_by = current_user.name
+                order.dispute_winner = 'buyer'
+                order.dispute_resolved_at = datetime.utcnow()
                 order.status = 'Refunded'
                 order.account.status = 'Available'
                 
@@ -1280,7 +1811,7 @@ def admin_disputes():
             elif order.status == 'Awaiting_Buyer_Recovery' and not order.buyer_recovery_data:
                 flash(f'لم يقم المشتري بإدخال بيانات الحساب بعد. يرجى الانتظار.', 'warning')
                     
-        # 2. الموافقة على طلبات السحب
+        # ===== 2. الموافقة على طلبات السحب =====
         elif action == 'approve_withdrawal':
             req_id = request.form.get('request_id')
             req = WithdrawalRequest.query.get(req_id)
@@ -1296,7 +1827,7 @@ def admin_disputes():
                 db.session.commit()
                 flash(f'تمت الموافقة على طلب السحب بقيمة {req.amount} ريال للمستخدم {req.username} بنجاح.', 'success')
                 
-        # 3. رفض طلبات السحب وإعادة المبلغ للمحفظة
+        # ===== 3. رفض طلبات السحب وإعادة المبلغ للمحفظة =====
         elif action == 'reject_withdrawal':
             req_id = request.form.get('request_id')
             req = WithdrawalRequest.query.get(req_id)
@@ -1315,7 +1846,7 @@ def admin_disputes():
                 db.session.commit()
                 flash(f'تم رفض طلب السحب للمستخدم {req.username} وإعادة قيمة {req.amount} ريال لمحفظته.', 'info')
                 
-        # 4. حظر أو إلغاء حظر المستخدمين
+        # ===== 4. حظر أو إلغاء حظر المستخدمين =====
         elif action == 'toggle_ban':
             user_id = request.form.get('user_id')
             target_user = User.query.get(user_id)
@@ -1336,7 +1867,7 @@ def admin_disputes():
                     ban_status = 'حظر' if target_user.is_banned else 'إلغاء حظر'
                     flash(f'تم {ban_status} المستخدم {target_user.name} بنجاح.', 'success')
                     
-        # 5. ترقية لمشرف أو سحب الرتبة
+        # ===== 5. ترقية لمشرف أو سحب الرتبة =====
         elif action == 'toggle_admin':
             user_id = request.form.get('user_id')
             target_user = User.query.get(user_id)
@@ -1349,7 +1880,7 @@ def admin_disputes():
                     admin_status = 'مشرف' if target_user.is_admin else 'عضو عادي'
                     flash(f'تم تغيير رتبة المستخدم {target_user.name} إلى {admin_status}.', 'success')
                     
-        # 6. تعديل رصيد مستخدم يدوياً
+        # ===== 6. تعديل رصيد مستخدم يدوياً =====
         elif action == 'edit_balance':
             user_id = request.form.get('user_id')
             new_bal = float(request.form.get('balance', 0))
@@ -1362,14 +1893,14 @@ def admin_disputes():
                 
         return redirect(url_for('admin_disputes'))
         
-    disputed_orders = Order.query.filter_by(status='Disputed').all()
+    disputed_orders = Order.query.filter(Order.status.in_(['In_Dispute', 'Disputed'])).all()
     recovery_orders = Order.query.filter_by(status='Awaiting_Buyer_Recovery').all()
     all_orders = Order.query.order_by(Order.id.desc()).all()
     all_users = User.query.order_by(User.id.desc()).all()
     all_withdrawals = WithdrawalRequest.query.order_by(WithdrawalRequest.id.desc()).all()
     all_reports = Report.query.order_by(Report.id.desc()).all()
     
-    funds_held_total = sum(o.price for o in all_orders if o.status in ['Funds_Held', 'Credentials_Submitted', 'Disputed'])
+    funds_held_total = sum(o.price for o in all_orders if o.status in ['Paid_Hold', 'Funds_Held', 'Credentials_Submitted', 'In_Dispute', 'Disputed'])
     users_balances_total = sum(u.balance for u in all_users)
     
     return render_template(

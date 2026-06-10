@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ account.game }} - وسيط</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}">
+    <style>
+        .detail-layout {
+            display: grid;
+            grid-template-columns: 1.2fr 1fr;
+            gap: 30px;
+        }
+        @media (max-width: 850px) { .detail-layout { grid-template-columns: 1fr; } }
+        .detail-image {
+            width: 100%; height: 350px;
+            background: linear-gradient(135deg, #0e111a, #131722);
+            border-radius: 20px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 80px; color: var(--text-muted);
+            overflow: hidden; border: 1px solid var(--border-color);
+        }
+        .detail-image img { width: 100%; height: 100%; object-fit: cover; }
+        .detail-info {
+            background: var(--bg-card);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border-color);
+            border-radius: 24px; padding: 30px;
+        }
+        .detail-game { font-size: 28px; font-weight: 900; color: white; margin-bottom: 5px; }
+        .detail-seller { color: var(--text-secondary); font-size: 14px; margin-bottom: 20px; display: flex; align-items: center; gap: 8px; }
+        .detail-price { font-size: 36px; font-weight: 900; color: var(--primary); text-shadow: 0 0 20px rgba(0,255,157,0.2); margin-bottom: 20px; }
+        .detail-desc {
+            color: var(--text-secondary); line-height: 1.8; font-size: 15px;
+            margin-bottom: 25px; padding: 15px;
+            background: rgba(7,8,10,0.4); border-radius: 12px; border: 1px solid var(--border-color);
+        }
+        .detail-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 25px; }
+        .detail-tag { background: rgba(126,63,242,0.08); border: 1px solid rgba(126,63,242,0.2); color: #b76eff; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 700; }
+        .detail-actions { display: flex; gap: 12px; flex-wrap: wrap; }
+        .detail-actions .btn { flex: 1; min-width: 140px; }
+        .similar-section { margin-top: 40px; }
+        .similar-title { font-size: 22px; font-weight: 900; color: white; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+        .similar-title i { color: var(--primary); }
+        .similar-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; }
+        .similar-card {
+            background: var(--bg-card); backdrop-filter: blur(12px);
+            border: 1px solid var(--border-color); border-radius: 16px; padding: 20px;
+            transition: all 0.3s; text-decoration: none; display: block;
+        }
+        .similar-card:hover { border-color: var(--primary); transform: translateY(-5px); box-shadow: 0 10px 25px rgba(0,255,157,0.08); }
+        .similar-card .game { font-size: 18px; font-weight: 800; color: white; margin-bottom: 8px; }
+        .similar-card .price { font-size: 20px; font-weight: 900; color: var(--primary); }
+        .warning-banner {
+            background: linear-gradient(135deg, rgba(255,145,0,0.1), rgba(255,23,68,0.05));
+            border: 1px solid rgba(255,145,0,0.3);
+            border-radius: 16px; padding: 16px 20px; margin-bottom: 30px;
+            display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+        }
+        .warning-banner i { font-size: 24px; color: var(--warning); }
+        .warning-banner .text { flex: 1; color: var(--text-secondary); font-size: 13px; line-height: 1.7; font-weight: 600; }
+        .warning-banner .text strong { color: var(--warning); }
+    </style>
+</head>
+<body>
+    <div class="bg-glow-bubble bg-glow-1"></div>
+    <div class="bg-glow-bubble bg-glow-2"></div>
+
+    <header class="navbar">
+        <div class="container">
+            <a href="/" class="logo"><span><i class="fa-solid fa-shield-halved"></i> وسيط 🎮</span></a>
+            <ul class="nav-links">
+                <li><a href="/" class="nav-link"><i class="fa-solid fa-house"></i> الرئيسية</a></li>
+                <li><a href="/accounts" class="nav-link active"><i class="fa-solid fa-gamepad"></i> الحسابات المعروضة</a></li>
+                <li><a href="/sell" class="nav-link"><i class="fa-solid fa-tags"></i> بيع حساب</a></li>
+            </ul>
+            <div class="nav-user">
+                {% if current_user_obj %}
+                    <a href="/dashboard" class="wallet-badge"><i class="fa-solid fa-wallet"></i> <span>الرصيد: {{ "{:,.2f}".format(current_user_obj.balance) }} ريال</span></a>
+                    {% include 'notification_bell.html' %}
+                    <a href="/dashboard" class="nav-link" style="color: var(--primary);"><i class="fa-solid fa-user"></i> {{ current_user_obj.name }}</a>
+                    {% if current_user_obj.is_admin %}<a href="/admin/disputes" class="btn btn-accent btn-sm"><i class="fa-solid fa-user-shield"></i> لوحة الإدارة</a>{% endif %}
+                    <a href="/logout" class="btn btn-secondary btn-sm"><i class="fa-solid fa-right-from-bracket"></i> خروج</a>
+                {% else %}
+                    <a href="/login" class="nav-link"><i class="fa-solid fa-right-to-bracket"></i> تسجيل الدخول</a>
+                    <a href="/register" class="btn btn-primary btn-sm"><i class="fa-solid fa-user-plus"></i> إنشاء حساب</a>
+                {% endif %}
+            </div>
+        </div>
+    </header>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="alerts-container">{% for category, message in messages %}<div class="alert alert-{{ category }}"><span>{{ message }}</span></div>{% endfor %}</div>
+      {% endif %}
+    {% endwith %}
+
+    <main class="main-content container">
+        <!-- شريط تحذيري توعوي -->
+        <div class="warning-banner">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+            <div class="text"><strong>⚠️ تنبيه أمان مهم:</strong> لا تقم بتحويل الأموال أو التعامل خارج منصة الوساطة. أي تعامل خارج المنصة يعرضك لخطر الاحتيال. <strong>جميع المدفوعات تتم عبر نظام الوساطة الآمن فقط.</strong></div>
+        </div>
+
+        <div class="detail-layout">
+            <div>
+                <div class="detail-image">
+                    {% if account.image_url %}<img src="{{ account.image_url }}" alt="{{ account.game }}">{% else %}<i class="fa-solid fa-gamepad" style="opacity: 0.25;"></i>{% endif %}
+                </div>
+            </div>
+            <div class="detail-info">
+                <h1 class="detail-game">{{ account.game }}</h1>
+                <div class="detail-seller">
+                    <i class="fa-solid fa-user-tag"></i> البائع: {{ account.seller }}
+                    {% set rating_info = get_seller_rating(account.seller) %}
+                    {% if rating_info %}<span style="color: var(--warning); font-weight: 800; margin-right: 10px;"><i class="fa-solid fa-star"></i> {{ rating_info.avg }} ({{ rating_info.count }})</span>{% endif %}
+                </div>
+                <div class="detail-price">{{ "{:,.0f}".format(account.price) }} <span style="font-size: 18px;">ريال</span></div>
+                <div style="margin-bottom: 15px;"><span class="platform-badge"><i class="fa-solid fa-desktop"></i> {{ account.platform }}</span></div>
+                <div class="detail-desc">{{ account.description or 'لا يوجد وصف إضافي لهذا الحساب.' }}</div>
+                {% if account.tags %}
+                <div class="detail-tags">{% for tag in account.tags.split(',') %}<span class="detail-tag"><i class="fa-solid fa-tag"></i> {{ tag.strip() }}</span>{% endfor %}</div>
+                {% endif %}
+                <div class="detail-actions">
+                    {% if current_user_obj and current_user_obj.name == account.seller %}
+                        <button class="btn btn-secondary" disabled style="cursor: not-allowed; opacity: 0.6;"><i class="fa-solid fa-user-lock"></i> حسابك المعروض</button>
+                    {% elif current_user_obj %}
+                        <form method="POST" action="/order/create/{{ account.id }}"><button type="submit" class="btn btn-primary"><i class="fa-solid fa-shield-halved"></i> شراء آمن عبر الوسيط</button></form>
+                    {% else %}
+                        <a href="/login" class="btn btn-primary"><i class="fa-solid fa-shield-halved"></i> شراء آمن عبر الوسيط</a>
+                    {% endif %}
+                    <a href="/accounts" class="btn btn-secondary"><i class="fa-solid fa-arrow-right"></i> العودة للحسابات</a>
+                </div>
+            </div>
+        </div>
+
+        {% if similar_accounts %}
+        <section class="similar-section">
+            <h2 class="similar-title"><i class="fa-solid fa-layer-group"></i> حسابات مشابهة قد تهمك</h2>
+            <div class="similar-grid">
+                {% for sa in similar_accounts %}
+                <a href="/account/{{ sa.id }}" class="similar-card">
+                    <div class="game">{{ sa.game }}</div>
+                    <div style="font-size: 11px; color: var(--text-muted); font-weight: 700;"><i class="fa-solid fa-desktop"></i> {{ sa.platform }}</div>
+                    <div class="price">{{ "{:,.0f}".format(sa.price) }} ريال</div>
+                    <div style="color: var(--text-muted); font-size: 12px; margin-top: 8px;"><i class="fa-solid fa-user-tag"></i> {{ sa.seller }}</div>
+                </a>
+                {% endfor %}
+            </div>
+        </section>
+        {% endif %}
+    </main>
+
+    <footer class="footer">
+        <div style="display: flex; justify-content: center; gap: 30px; flex-wrap: wrap; margin-bottom: 10px;">
+            <a href="/" style="color: var(--text-secondary); text-decoration: none; font-weight: 700; font-size: 14px;"><i class="fa-solid fa-house"></i> الرئيسية</a>
+            <a href="/accounts" style="color: var(--text-secondary); text-decoration: none; font-weight: 700; font-size: 14px;"><i class="fa-solid fa-gamepad"></i> الحسابات المعروضة</a>
+            <a href="/sell" style="color: var(--text-secondary); text-decoration: none; font-weight: 700; font-size: 14px;"><i class="fa-solid fa-tags"></i> بيع حساب</a>
+            <a href="/terms" style="color: var(--primary); text-decoration: none; font-weight: 700; font-size: 14px;"><i class="fa-solid fa-file-contract"></i> الشروط والأحكام</a>
+        </div>
+        <p>جميع الحقوق محفوظة © 2026 لـ منصة <span>وسيط</span> لبيع الحسابات بأمان.</p>
+    </footer>
+</body>
+</html>

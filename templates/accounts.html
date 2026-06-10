@@ -226,6 +226,14 @@
             <a href="/sell" class="btn btn-primary"><i class="fa-solid fa-circle-plus"></i> اعرض حسابك للبيع</a>
         </div>
 
+        <!-- شريط تحذيري توعوي -->
+        <div class="warning-banner" style="background: linear-gradient(135deg, rgba(255, 145, 0, 0.1), rgba(255, 23, 68, 0.05)); border: 1px solid rgba(255, 145, 0, 0.3); border-radius: 16px; padding: 14px 18px; margin-bottom: 30px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+            <i class="fa-solid fa-triangle-exclamation" style="font-size: 22px; color: var(--warning);"></i>
+            <div style="flex: 1; color: var(--text-secondary); font-size: 13px; line-height: 1.7; font-weight: 600;">
+                <strong style="color: var(--warning);">⚠️ تنبيه أمان مهم:</strong> لا تقم بتحويل الأموال أو التعامل خارج منصة الوساطة. أي تعامل خارج المنصة يعرضك لخطر الاحتيال. <strong>جميع المدفوعات تتم عبر نظام الوساطة الآمن فقط.</strong>
+            </div>
+        </div>
+
         <!-- فلاتر التصفح -->
         <section class="filter-section">
             <form method="GET" action="/accounts" class="filter-form">
@@ -248,9 +256,18 @@
                         {% endfor %}
                     </select>
                 </div>
+
+                <div class="filter-group">
+                    <label class="form-label"><i class="fa-solid fa-sort"></i> ترتيب حسب</label>
+                    <select name="sort" class="filter-select">
+                        <option value="newest" {% if current_sort == 'newest' %}selected{% endif %}>الأحدث أولاً</option>
+                        <option value="price_asc" {% if current_sort == 'price_asc' %}selected{% endif %}>السعر: من الأقل للأعلى</option>
+                        <option value="price_desc" {% if current_sort == 'price_desc' %}selected{% endif %}>السعر: من الأعلى للأقل</option>
+                    </select>
+                </div>
                 
                 <div style="display: flex; gap: 12px; margin-top: 10px; width: 100%; justify-content: flex-end; flex-wrap: wrap;">
-                    {% if selected_game or selected_platform %}
+                    {% if selected_game or selected_platform or current_sort != 'newest' %}
                         <a href="/accounts" class="btn btn-secondary btn-sm" style="height: 46px; display: inline-flex; align-items: center;"><i class="fa-solid fa-rotate-left"></i> إعادة تعيين</a>
                     {% endif %}
                     <button class="btn btn-primary" type="submit" style="padding: 10px 30px;"><i class="fa-solid fa-magnifying-glass"></i> بحث</button>
@@ -318,11 +335,13 @@
                             {% if current_user_obj and current_user_obj.name == account.seller %}
                                 <button class="btn btn-secondary btn-sm" disabled style="cursor: not-allowed; opacity: 0.6;"><i class="fa-solid fa-user-lock"></i> حسابك المعروض</button>
                             {% elif current_user_obj %}
+                                <a href="/account/{{ account.id }}" class="btn btn-accent btn-sm"><i class="fa-solid fa-eye"></i> مشاهدة</a>
                                 <form method="POST" action="/order/create/{{ account.id }}">
                                     <button type="submit" class="btn btn-primary btn-sm"><i class="fa-solid fa-shield-halved"></i> شراء آمن</button>
                                 </form>
                                 <button class="report-btn" onclick="openReportModal({{ account.id }})" title="الإبلاغ عن هذا الإعلان"><i class="fa-solid fa-flag"></i> إبلاغ</button>
                             {% else %}
+                                <a href="/account/{{ account.id }}" class="btn btn-accent btn-sm"><i class="fa-solid fa-eye"></i> مشاهدة</a>
                                 <a href="/login" class="btn btn-primary btn-sm"><i class="fa-solid fa-shield-halved"></i> شراء آمن</a>
                             {% endif %}
                         </div>

@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🚫 ممنوع الوصول - 403</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            direction: rtl;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 30px;
+            padding: 60px 50px;
+            text-align: center;
+            max-width: 550px;
+            width: 90%;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+        }
+        .lock-icon {
+            font-size: 80px;
+            margin-bottom: 25px;
+            display: block;
+            animation: shake 0.8s ease-in-out infinite alternate;
+        }
+        @keyframes shake {
+            0% { transform: rotate(-5deg) scale(1); }
+            100% { transform: rotate(5deg) scale(1.05); }
+        }
+        h1 {
+            color: #e74c3c;
+            font-size: 72px;
+            font-weight: 900;
+            letter-spacing: 5px;
+            margin-bottom: 5px;
+            text-shadow: 0 0 30px rgba(231, 76, 60, 0.3);
+        }
+        h2 {
+            color: #fff;
+            font-size: 28px;
+            margin-bottom: 20px;
+            font-weight: 700;
+        }
+        p {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 18px;
+            line-height: 1.7;
+            margin-bottom: 35px;
+        }
+        .btn-home {
+            display: inline-block;
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            color: white;
+            padding: 16px 45px;
+            border-radius: 50px;
+            text-decoration: none;
+            font-size: 18px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 5px 20px rgba(231, 76, 60, 0.4);
+        }
+        .btn-home:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 30px rgba(231, 76, 60, 0.6);
+        }
+        .btn-login {
+            display: inline-block;
+            background: transparent;
+            color: rgba(255, 255, 255, 0.8);
+            padding: 14px 40px;
+            border-radius: 50px;
+            text-decoration: none;
+            font-size: 16px;
+            font-weight: 500;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+            margin-right: 12px;
+        }
+        .btn-login:hover {
+            border-color: rgba(255, 255, 255, 0.5);
+            color: #fff;
+        }
+        .buttons {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        .divider {
+            width: 60px;
+            height: 3px;
+            background: linear-gradient(90deg, #e74c3c, transparent);
+            margin: 0 auto 25px auto;
+            border-radius: 10px;
+        }
+        @media (max-width: 600px) {
+            .container {
+                padding: 40px 25px;
+            }
+            h1 {
+                font-size: 56px;
+            }
+            h2 {
+                font-size: 22px;
+            }
+            p {
+                font-size: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <span class="lock-icon">🚫</span>
+        <h1>403</h1>
+        <div class="divider"></div>
+        <h2>ممنوع الوصول</h2>
+        <p>
+            ⚠️ هذه الصفحة خاصة بالإدارة فقط.<br>
+            ليس لديك الصلاحية للوصول إلى هذه الصفحة.<br>
+            إذا كنت تعتقد أن هذا خطأ، يرجى الاتصال بالإدارة.
+        </p>
+        <div class="buttons">
+            <a href="{{ url_for('home') }}" class="btn-home">🏠 العودة للصفحة الرئيسية</a>
+            <a href="{{ url_for('login') }}" class="btn-login">🔑 تسجيل الدخول</a>
+        </div>
+    </div>
+</body>
+</html>
