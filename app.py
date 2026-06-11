@@ -24,7 +24,8 @@ app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # حد أقصى 16 ميجا
 app.config['COMMISSION_RATE'] = 5.0  # نسبة عمولة المنصة 5%
 # إعدادات SMTP للبريد الإلكتروني - تقرأ من متغيرات البيئة فقط (تُضبط في Railway)
 app.config['MAIL_SERVER'] = os.environ.get('MAIL_SERVER', 'smtp.gmail.com')
-app.config['MAIL_PORT'] = int(os.environ.get('MAIL_PORT', 587))
+mail_port_raw = os.environ.get('MAIL_PORT', '587')
+app.config['MAIL_PORT'] = int(mail_port_raw) if mail_port_raw and mail_port_raw.strip() else 587
 app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME', '')
 app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD', '')
 app.config['MAIL_FROM'] = os.environ.get('MAIL_FROM', '')
