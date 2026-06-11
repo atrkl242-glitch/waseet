@@ -1370,6 +1370,25 @@ def admin_disputes(current_user):
                     admin_status = 'مشرف' if target_user.is_admin else 'عضو عادي'
                     flash(f'تم تغيير رتبة المستخدم {target_user.name} إلى {admin_status}.', 'success')
                     
+        elif action == 'delete_user':
+            user_id = request.form.get('user_id')
+            target_user = User.query.get(user_id)
+            if not target_user:
+                flash('المستخدم غير موجود.', 'danger')
+            elif target_user.name == current_user.name:
+                flash('لا يمكنك حذف حسابك الشخصي!', 'danger')
+            elif target_user.is_admin:
+                flash('لا يمكنك حذف حساب مشرف آخر! قم أولاً بإزالة صلاحية الإشراف عنه.', 'danger')
+            else:
+                # حذف الحسابات التي يبيعها المستخدم
+                user_accounts = Account.query.filter_by(seller=target_user.name).all()
+                for acc in user_accounts:
+                    db.session.delete(acc)
+                # حذف المستخدم
+                db.session.delete(target_user)
+                db.session.commit()
+                flash(f'✅ تم حذف المستخدم "{target_user.name}" وجميع حساباته بنجاح.', 'success')
+                    
         elif action == 'edit_balance':
             user_id = request.form.get('user_id')
             new_bal = float(request.form.get('balance', 0))

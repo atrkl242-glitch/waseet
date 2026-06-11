@@ -584,6 +584,9 @@
                                     <button type="submit" name="action" value="toggle_admin" class="btn btn-sm btn-warning">
                                         {% if u.is_admin %}👤 إزالة مشرف{% else %}🛡️ ترقية مشرف{% endif %}
                                     </button>
+                                    {% if not u.is_admin and u.name != user.name %}
+                                    <button type="submit" name="action" value="delete_user" class="btn btn-sm btn-danger" onclick="return confirm('⚠️ هل أنت متأكد من حذف المستخدم {{ u.name }}؟\nسيتم حذف الحساب وجميع إعلاناته بشكل نهائي!')">🗑️ حذف</button>
+                                    {% endif %}
                                 </form>
                             </td>
                         </tr>
