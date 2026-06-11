@@ -22,42 +22,25 @@ app.secret_key = 'waseet123_secure_key'
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # حد أقصى 16 ميجابايت للصورة
 app.config['COMMISSION_RATE'] = 5.0  # نسبة عمولة المنصة 5%
-# إعدادات SMTP للبريد الإلكتروني - تقرأ من متغيرات البيئة أو من ملف SMTP config
+# إعدادات SMTP للبريد الإلكتروني - تقرأ من متغيرات البيئة فقط (تُضبط في Railway)
 app.config['MAIL_SERVER'] = os.environ.get('MAIL_SERVER', 'smtp.gmail.com')
 app.config['MAIL_PORT'] = int(os.environ.get('MAIL_PORT', 587))
-app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME', 'atrkl250@gmail.com')
-app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD', 'zwcn vqrj cqvx snmg')
-app.config['MAIL_FROM'] = os.environ.get('MAIL_FROM', 'atrkl250@gmail.com')
-# إعدادات SMTP من ملف التخزين الداخلي (تحديث من لوحة الإدارة)
-SMTP_CONFIG_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'smtp_config.json')
+app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME', '')
+app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD', '')
+app.config['MAIL_FROM'] = os.environ.get('MAIL_FROM', '')
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp', 'svg'}
 ITEMS_PER_PAGE = 20  # عدد العناصر في كل صفحة لتحسين السرعة
 
-# تحميل إعدادات SMTP من الملف إن وجد (تحديث من لوحة الإدارة)
-def load_smtp_config():
-    """تحميل إعدادات SMTP من ملف JSON"""
-    try:
-        if os.path.exists(SMTP_CONFIG_FILE):
-            with open(SMTP_CONFIG_FILE, 'r') as f:
-                config = json.load(f)
-                # تحديث إعدادات SMTP من الملف
-                if 'mail_server' in config and config['mail_server']:
-                    app.config['MAIL_SERVER'] = config['mail_server']
-                if 'mail_port' in config and config['mail_port']:
-                    app.config['MAIL_PORT'] = int(config['mail_port'])
-                if 'mail_username' in config and config['mail_username']:
-                    app.config['MAIL_USERNAME'] = config['mail_username']
-                if 'mail_password' in config and config['mail_password']:
-                    app.config['MAIL_PASSWORD'] = config['mail_password']
-                if 'mail_from' in config and config['mail_from']:
-                    app.config['MAIL_FROM'] = config['mail_from']
-                return config
-    except Exception as e:
-        print(f'⚠️ خطأ في تحميل إعدادات SMTP: {e}')
-    return None
-
-# تحميل الإعدادات عند بدء التشغيل
-smtp_config = load_smtp_config()
+# تحميل إعدادات SMTP من متغيرات البيئة
+def get_smtp_config():
+    """إرجاع إعدادات SMTP الحالية من app.config"""
+    return {
+        'mail_server': app.config.get('MAIL_SERVER', ''),
+        'mail_port': app.config.get('MAIL_PORT', 587),
+        'mail_username': app.config.get('MAIL_USERNAME', ''),
+        'mail_password': app.config.get('MAIL_PASSWORD', ''),
+        'mail_from': app.config.get('MAIL_FROM', '')
+    }
 
 # Re-trigger: Force Railway to rebuild and rebind DATABASE_URL environment variable
 # قائمة نطاقات الإيميلات المؤقتة والوهمية المعروفة
@@ -1185,28 +1168,14 @@ def admin_save_smtp(current_user):
         # إعادة تحميل الصفحة مع الحالة
         return redirect(url_for('admin_disputes'))
     
-    # حفظ الإعدادات
-    try:
-        config = {
-            'mail_server': mail_server,
-            'mail_port': mail_port,
-            'mail_username': mail_username,
-            'mail_password': mail_password,
-            'mail_from': mail_username
-        }
-        with open(SMTP_CONFIG_FILE, 'w') as f:
-            json.dump(config, f)
-        
-        # تحديث الإعدادات في الذاكرة
-        app.config['MAIL_SERVER'] = mail_server
-        app.config['MAIL_PORT'] = mail_port
-        app.config['MAIL_USERNAME'] = mail_username
-        app.config['MAIL_PASSWORD'] = mail_password
-        app.config['MAIL_FROM'] = mail_username
-        
-        flash('✅ تم حفظ إعدادات البريد الإلكتروني بنجاح! سيتم استخدامها لإرسال إيميلات التحقق.', 'success')
-    except Exception as e:
-        flash(f'❌ فشل حفظ الإعدادات: {str(e)}', 'danger')
+    # تحديث الإعدادات في الذاكرة مباشرة (لن يتم حفظها في ملف بعد الآن)
+    app.config['MAIL_SERVER'] = mail_server
+    app.config['MAIL_PORT'] = mail_port
+    app.config['MAIL_USERNAME'] = mail_username
+    app.config['MAIL_PASSWORD'] = mail_password
+    app.config['MAIL_FROM'] = mail_username
+    
+    flash('✅ تم تحديث إعدادات البريد الإلكتروني في الجلسة الحالية! ⚠️ ملاحظة: لتثبيت الإعدادات بشكل دائم، قم بتعيين متغيرات البيئة MAIL_SERVER, MAIL_PORT, MAIL_USERNAME, MAIL_PASSWORD في لوحة تحكم Railway.', 'success')
     
     return redirect(url_for('admin_disputes'))
 
@@ -1214,7 +1183,7 @@ def admin_save_smtp(current_user):
 @admin_required
 def admin_disputes(current_user):
     # إعادة تحميل إعدادات SMTP لعرضها في الواجهة
-    loaded_config = load_smtp_config()
+    loaded_config = get_smtp_config()
     
     if request.method == 'POST':
         action = request.form.get('action')
