@@ -182,24 +182,52 @@ def generate_otp():
 def send_otp_email(to_email, otp_code, username):
     subject = '🔐 كود التحقق - منصة وسيط'
     body = f"""
-    <div dir="rtl" style="font-family: 'Segoe UI', Tahoma, sans-serif; max-width: 500px; margin: 0 auto; padding: 30px; background: linear-gradient(135deg, #0a0b12, #1a1b2e); border-radius: 20px; border: 1px solid rgba(126, 63, 242, 0.3);">
-        <div style="text-align: center; margin-bottom: 25px;">
-            <span style="font-size: 32px;">🛡️</span>
-            <h1 style="color: #0ff; font-size: 24px; margin: 10px 0;">منصة وسيط</h1>
-        </div>
-        <div style="background: rgba(7, 8, 10, 0.6); border-radius: 16px; padding: 25px; border: 1px solid rgba(255,255,255,0.05);">
-            <p style="color: #e0e0e0; font-size: 16px; line-height: 1.7;">مرحباً <strong style="color: #0ff;">{username}</strong>،</p>
-            <p style="color: #a2a8b9; font-size: 14px; line-height: 1.7;">نشكرك على إنشاء حساب في منصة وسيط. يرجى استخدام الكود التالي لتأكيد بريدك الإلكتروني:</p>
-            <div style="text-align: center; margin: 25px 0;">
-                <span style="display: inline-block; background: linear-gradient(135deg, #00ff9d, #00f0ff); color: #0a0b12; font-size: 36px; font-weight: 900; letter-spacing: 8px; padding: 12px 32px; border-radius: 12px; font-family: monospace;">{otp_code}</span>
-            </div>
-            <p style="color: #ff6b6b; font-size: 13px; font-weight: 700; text-align: center;">⚠️ هذا الكود صالح لمدة 10 دقائق فقط.</p>
-            <p style="color: #a2a8b9; font-size: 13px; line-height: 1.7; margin-top: 20px;">إذا لم تطلب إنشاء حساب في منصة وسيط، يرجى تجاهل هذا البريد.</p>
-        </div>
-        <div style="text-align: center; margin-top: 20px; color: #5a5f7a; font-size: 12px;">
-            <p>© 2026 منصة وسيط - جميع الحقوق محفوظة</p>
-            <p style="direction: ltr;">waseet.shop</p>
-        </div>
+    <div dir="rtl" style="background-color: #0c0e17; font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; padding: 40px 20px; text-align: right; min-height: 100%;">
+        <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 550px; background-color: #161a2b; border: 1px solid #2a314d; border-radius: 16px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35); overflow: hidden;">
+            <!-- Header -->
+            <tr>
+                <td align="center" style="padding: 40px 30px 20px 30px; background-color: #1a1e36; border-bottom: 1px solid #2a314d;">
+                    <div style="width: 64px; height: 64px; line-height: 64px; background-color: rgba(126, 63, 242, 0.1); border: 1px solid rgba(126, 63, 242, 0.3); border-radius: 50%; font-size: 32px; display: inline-block;">🛡️</div>
+                    <h1 style="color: #ffffff; font-size: 26px; font-weight: 800; margin: 15px 0 0 0; letter-spacing: 0.5px;">منصة وسيط</h1>
+                    <p style="color: #8c98c1; font-size: 14px; margin: 5px 0 0 0; font-weight: 600;">بوابة الوساطة الآمنة لبيع وشراء الحسابات</p>
+                </td>
+            </tr>
+            <!-- Content -->
+            <tr>
+                <td style="padding: 40px 35px 30px 35px;">
+                    <p style="color: #ffffff; font-size: 18px; font-weight: 700; margin: 0 0 15px 0; line-height: 1.6;">مرحباً <span style="color: #00ff9d;">{username}</span>،</p>
+                    <p style="color: #a2b0d6; font-size: 15px; line-height: 1.8; margin: 0 0 30px 0; font-weight: 500;">
+                        نشكرك على تسجيلك في منصة وسيط. لإتمام عملية تفعيل حسابك والبدء في إجراء المعاملات بأمان، يرجى استخدام رمز التحقق التالي:
+                    </p>
+                    
+                    <!-- OTP Code Block -->
+                    <table align="center" border="0" cellpadding="0" cellspacing="0" style="margin: 0 auto 30px auto;">
+                        <tr>
+                            <td align="center" style="background-color: #0c0e17; border: 2px solid #7e3ff2; border-radius: 12px; padding: 18px 45px;">
+                                <span style="font-family: 'Courier New', Courier, monospace, sans-serif; color: #00ff9d; font-size: 40px; font-weight: 900; letter-spacing: 8px; line-height: 1; text-shadow: 0 0 10px rgba(0, 255, 157, 0.2);">{otp_code}</span>
+                            </td>
+                        </tr>
+                    </table>
+                    
+                    <!-- Warning and Expiry -->
+                    <div style="background-color: rgba(255, 107, 107, 0.05); border: 1px solid rgba(255, 107, 107, 0.15); border-radius: 10px; padding: 15px; margin-bottom: 30px; text-align: center;">
+                        <p style="color: #ff6b6b; font-size: 13px; font-weight: 700; margin: 0;">⏱️ هذا الكود صالح لمدة 10 دقائق فقط. لا تشاركه مع أي شخص.</p>
+                    </div>
+                    
+                    <p style="color: #636e92; font-size: 13px; line-height: 1.6; margin: 0; text-align: center;">
+                        إذا لم تقم بطلب هذا الرمز، يرجى تجاهل هذا البريد الإلكتروني.
+                    </p>
+                </td>
+            </tr>
+            <!-- Footer -->
+            <tr>
+                <td align="center" style="padding: 25px 35px; background-color: #0c0e17; border-top: 1px solid #2a314d; font-size: 12px; color: #505c80;">
+                    <p style="margin: 0 0 8px 0; font-weight: 700;">منصة وسيط لبيع وشراء الحسابات والألعاب بأمان</p>
+                    <p style="margin: 0 0 15px 0; font-weight: 600; direction: ltr;"><a href="https://waseet.shop" style="color: #7e3ff2; text-decoration: none;">waseet.shop</a></p>
+                    <p style="margin: 0; font-size: 11px; color: #3c4566;">© 2026 منصة وسيط. جميع الحقوق محفوظة.</p>
+                </td>
+            </tr>
+        </table>
     </div>
     """
     try:
