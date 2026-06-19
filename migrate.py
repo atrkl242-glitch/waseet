@@ -77,6 +77,18 @@ try:
         print('✅ تم إضافة عمود dispute_resolved_at إلى order')
     else:
         print('ℹ️ عمود dispute_resolved_at موجود مسبقاً')
+        
+    if 'buyer_recovery_data' not in order_columns:
+        cursor.execute("ALTER TABLE 'order' ADD COLUMN buyer_recovery_data TEXT")
+        print('✅ تم إضافة عمود buyer_recovery_data إلى order')
+    else:
+        print('ℹ️ عمود buyer_recovery_data موجود مسبقاً')
+        
+    if 'buyer_recovery_submitted_at' not in order_columns:
+        cursor.execute("ALTER TABLE 'order' ADD COLUMN buyer_recovery_submitted_at DATETIME")
+        print('✅ تم إضافة عمود buyer_recovery_submitted_at إلى order')
+    else:
+        print('ℹ️ عمود buyer_recovery_submitted_at موجود مسبقاً')
     
     # 3. إضافة عمود tags إلى جدول Account
     cursor.execute("PRAGMA table_info(account)")

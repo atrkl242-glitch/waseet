@@ -15,8 +15,12 @@ from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime, timedelta
 
 app = Flask(__name__)
-# Force PostgreSQL connection with new password (Railway internal)
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'postgresql://postgres:fIFMPjCQhDitmOtSoglMisrNxhLdYCib@postgres.railway.internal:5432/railway')
+# Force PostgreSQL connection with new password (Railway internal), fallback to SQLite for local development
+db_url = os.environ.get('DATABASE_URL')
+if not db_url:
+    db_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'instance', 'waseet.db')
+    db_url = f'sqlite:///{db_path}'
+app.config['SQLALCHEMY_DATABASE_URI'] = db_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False  # تحسين الأداء
 app.secret_key = 'waseet123_secure_key'
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
@@ -31,6 +35,15 @@ app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD', '')
 app.config['MAIL_FROM'] = os.environ.get('MAIL_FROM', '')
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp', 'svg'}
 ITEMS_PER_PAGE = 20  # عدد العناصر في كل صفحة لتحسين السرعة
+
+def safe_print(text):
+    try:
+        print(text)
+    except UnicodeEncodeError:
+        try:
+            print(text.encode('ascii', 'ignore').decode('ascii'))
+        except Exception:
+            pass
 
 # تحميل إعدادات SMTP من متغيرات البيئة
 def get_smtp_config():
@@ -190,7 +203,11 @@ def send_otp_email(to_email, otp_code, username):
     </div>
     """
     try:
-        if app.config['MAIL_USERNAME'] and app.config['MAIL_PASSWORD']:
+        if '@' not in to_email:
+            safe_print(f'⚠️ المستلم {to_email} ليس بريداً إلكترونياً (ربما رقم جوال)، لن يتم إرسال إيميل.')
+            return False
+            
+        if app.config.get('MAIL_USERNAME') and app.config.get('MAIL_PASSWORD'):
             msg = MIMEMultipart('alternative')
             msg['From'] = app.config['MAIL_FROM']
             msg['To'] = to_email
@@ -201,9 +218,10 @@ def send_otp_email(to_email, otp_code, username):
             server.login(app.config['MAIL_USERNAME'], app.config['MAIL_PASSWORD'])
             server.sendmail(app.config['MAIL_FROM'], to_email, msg.as_string())
             server.quit()
-            print(f'✅ تم إرسال إيميل التحقق بنجاح إلى {to_email}')
+            safe_print(f'✅ تم إرسال إيميل التحقق بنجاح إلى {to_email}')
+            return True
         else:
-            print(f"""
+            safe_print(f"""
 ╔{'═'*50}╗
 ║  📧 إيميل التحقق (وضع التطوير)                         ║
 ║  ⚠️ لم يتم ضبط إعدادات SMTP - الإيميل لم يرسل فعلياً     ║
@@ -213,11 +231,10 @@ def send_otp_email(to_email, otp_code, username):
 ║  💡 اذهب إلى لوحة الإدارة ← إعدادات البريد لضبط SMTP    ║
 ╚{'═'*50}╝
             """)
-            return True
-        return True
+            return False
     except Exception as e:
-        print(f'❌ فشل إرسال الإيميل إلى {to_email}: {str(e)}')
-        return True
+        safe_print(f'❌ فشل إرسال الإيميل إلى {to_email}: {str(e)}')
+        return False
 
 # ==================== موديل قاعدة البيانات ====================
 class User(db.Model):
@@ -673,127 +690,101 @@ def register():
             return render_template('register.html', error='اسم المستخدم أو البريد/الجوال مسجل بالفعل')
         hashed = bcrypt.generate_password_hash(password).decode('utf-8')
         otp = generate_otp()
-        # لا يتم إنشاء الحساب في قاعدة البيانات إلا بعد تأكيد OTP
-        session['pending_registration'] = {
-            'name': name,
-            'email': email_or_phone,
-            'password_hash': hashed,
-            'otp_code': otp,
-            'otp_expiry': (datetime.utcnow() + timedelta(minutes=10)).isoformat()
-        }
+        new_user = User(
+            name=name,
+            email=email_or_phone,
+            password=hashed,
+            balance=1000.0,
+            is_banned=False,
+            email_verified=False,
+            otp_code=otp,
+            otp_expiry=datetime.utcnow() + timedelta(minutes=10)
+        )
+        try:
+            db.session.add(new_user)
+            db.session.commit()
+        except Exception as e:
+            db.session.rollback()
+            return render_template('register.html', error='❌ حدث خطأ أثناء التسجيل. قد يكون اسم المستخدم أو البريد مسجلاً بالفعل.')
+            
         session.permanent = True
-        send_otp_email(email_or_phone, otp, name)
-        flash(f'تم إرسال كود التحقق إلى {email_or_phone} ✅ يرجى إدخال الكود لتفعيل حسابك.', 'success')
+        session['user'] = new_user.name
+        
+        email_sent = send_otp_email(email_or_phone, otp, name)
+        if email_sent:
+            flash(f'تم إرسال كود التحقق إلى {email_or_phone} ✅ يرجى إدخال الكود لتفعيل حسابك.', 'success')
+        else:
+            flash(f'⚠️ لم نتمكن من إرسال كود التحقق عبر البريد/الجوال تلقائياً. للتحقق والتجربة، كود التفعيل الخاص بك هو: {otp} 🔑', 'warning')
         return redirect(url_for('verify_email'))
     return render_template('register.html')
 
 @app.route('/verify_email', methods=['GET', 'POST'])
 def verify_email():
-    # التحقق من وجود جلسة تسجيل معلقة (النظام الجديد)
-    pending = session.get('pending_registration')
-    
-    if not pending:
-        # النظام القديم: المستخدم مسجل بالفعل في قاعدة البيانات ويحتاج تفعيل
-        if 'user' not in session:
-            return redirect(url_for('login'))
-        current_user = User.query.filter_by(name=session['user']).first()
-        if not current_user:
-            session.pop('user', None)
-            return redirect(url_for('login'))
-        if current_user.email_verified:
-            flash('بريدك الإلكتروني مفعل بالفعل! ✅', 'success')
-            return redirect(url_for('dashboard'))
-        # عرض صفحة التحقق للمستخدم الموجود في قاعدة البيانات
-        user_display = current_user
-    else:
-        # النظام الجديد: المستخدم لم يُنشأ في قاعدة البيانات بعد
-        user_display = type('obj', (object,), {
-            'name': pending['name'],
-            'email': pending['email'],
-            'email_verified': False,
-            'balance': 0.0
-        })()
-    
+    if 'user' not in session:
+        return redirect(url_for('login'))
+        
+    current_user = User.query.filter_by(name=session['user']).first()
+    if not current_user:
+        session.pop('user', None)
+        return redirect(url_for('login'))
+        
+    if current_user.email_verified:
+        flash('بريدك الإلكتروني مفعل بالفعل! ✅', 'success')
+        return redirect(url_for('dashboard'))
+        
+    if request.method == 'GET':
+        # إذا لم يكن هناك كود تحقق نشط أو انتهت صلاحيته، نولد كود جديد ونرسله
+        if not current_user.otp_code or current_user.otp_expiry is None or datetime.utcnow() > current_user.otp_expiry:
+            otp = generate_otp()
+            current_user.otp_code = otp
+            current_user.otp_expiry = datetime.utcnow() + timedelta(minutes=10)
+            db.session.commit()
+            email_sent = send_otp_email(current_user.email, otp, current_user.name)
+            if email_sent:
+                flash(f'🔐 تم إرسال كود التحقق إلى {current_user.email}', 'info')
+            else:
+                flash(f'⚠️ لم نتمكن من إرسال كود التحقق تلقائياً. كود التفعيل الخاص بك هو: {otp} 🔑', 'warning')
+                
     if request.method == 'POST':
         otp_input = request.form.get('otp', '').strip()
         action = request.form.get('action', '')
         
-        # معالجة حالة المستخدم القديم (موجود في DB)
-        if not pending and 'user' in session:
-            current_user = User.query.filter_by(name=session['user']).first()
-            if not current_user:
-                return redirect(url_for('login'))
-                
-            if action == 'resend':
-                new_otp = generate_otp()
-                current_user.otp_code = new_otp
-                current_user.otp_expiry = datetime.utcnow() + timedelta(minutes=10)
-                db.session.commit()
-                send_otp_email(current_user.email, new_otp, current_user.name)
+        if action == 'resend':
+            new_otp = generate_otp()
+            current_user.otp_code = new_otp
+            current_user.otp_expiry = datetime.utcnow() + timedelta(minutes=10)
+            db.session.commit()
+            email_sent = send_otp_email(current_user.email, new_otp, current_user.name)
+            if email_sent:
                 flash(f'✅ تم إرسال كود تحقق جديد إلى {current_user.email}', 'success')
-                return redirect(url_for('verify_email'))
-            if not otp_input:
-                flash('❌ يرجى إدخال كود التحقق.', 'danger')
-                return render_template('verify_email.html', user=current_user)
-            if not current_user.otp_code or current_user.otp_expiry is None:
-                flash('❌ لم يتم طلب كود تحقق. يرجى إعادة إرسال الكود.', 'danger')
-                return render_template('verify_email.html', user=current_user)
-            if datetime.utcnow() > current_user.otp_expiry:
-                flash('❌ انتهت صلاحية كود التحقق. يرجى طلب كود جديد.', 'danger')
-                return render_template('verify_email.html', user=current_user)
-            if otp_input == current_user.otp_code:
-                current_user.email_verified = True
-                current_user.otp_code = None
-                current_user.otp_expiry = None
-                db.session.commit()
-                flash('✅ تم تفعيل بريدك الإلكتروني بنجاح! يمكنك الآن الشراء والبيع بأمان.', 'success')
-                return redirect(url_for('dashboard'))
             else:
-                flash('❌ كود التحقق غير صحيح. يرجى المحاولة مرة أخرى.', 'danger')
-                return render_template('verify_email.html', user=current_user)
-        
-        # معالجة حالة المستخدم الجديد (غير موجود في DB بعد - pending)
-        if pending:
-            if action == 'resend':
-                new_otp = generate_otp()
-                pending['otp_code'] = new_otp
-                pending['otp_expiry'] = (datetime.utcnow() + timedelta(minutes=10)).isoformat()
-                session['pending_registration'] = pending
-                session.modified = True
-                send_otp_email(pending['email'], new_otp, pending['name'])
-                flash(f'✅ تم إرسال كود تحقق جديد إلى {pending["email"]}', 'success')
-                return redirect(url_for('verify_email'))
-            if not otp_input:
-                flash('❌ يرجى إدخال كود التحقق.', 'danger')
-                return render_template('verify_email.html', user=user_display)
-            expiry = datetime.fromisoformat(pending['otp_expiry'])
-            if datetime.utcnow() > expiry:
-                flash('❌ انتهت صلاحية كود التحقق. يرجى طلب كود جديد.', 'danger')
-                return render_template('verify_email.html', user=user_display)
-            if otp_input == pending['otp_code']:
-                # إنشاء الحساب في قاعدة البيانات بعد تأكيد OTP ✅
-                new_user = User(
-                    name=pending['name'],
-                    email=pending['email'],
-                    password=pending['password_hash'],
-                    balance=1000.0,
-                    is_banned=False,
-                    email_verified=True,
-                    otp_code=None,
-                    otp_expiry=None
-                )
-                db.session.add(new_user)
-                db.session.commit()
-                # تسجيل الدخول وإزالة البيانات المؤقتة
-                session['user'] = pending['name']
-                session.pop('pending_registration', None)
-                flash('✅ تم تفعيل بريدك الإلكتروني وإنشاء حسابك بنجاح! يمكنك الآن الشراء والبيع بأمان.', 'success')
-                return redirect(url_for('dashboard'))
-            else:
-                flash('❌ كود التحقق غير صحيح. يرجى المحاولة مرة أخرى.', 'danger')
-                return render_template('verify_email.html', user=user_display)
-    
-    return render_template('verify_email.html', user=user_display)
+                flash(f'⚠️ لم نتمكن من إرسال كود التحقق. كود التفعيل الجديد الخاص بك هو: {new_otp} 🔑', 'warning')
+            return redirect(url_for('verify_email'))
+            
+        if not otp_input:
+            flash('❌ يرجى إدخال كود التحقق.', 'danger')
+            return render_template('verify_email.html', user=current_user)
+            
+        if not current_user.otp_code or current_user.otp_expiry is None:
+            flash('❌ لم يتم طلب كود تحقق. يرجى إعادة إرسال الكود.', 'danger')
+            return render_template('verify_email.html', user=current_user)
+            
+        if datetime.utcnow() > current_user.otp_expiry:
+            flash('❌ انتهت صلاحية كود التحقق. يرجى طلب كود جديد.', 'danger')
+            return render_template('verify_email.html', user=current_user)
+            
+        if otp_input == current_user.otp_code:
+            current_user.email_verified = True
+            current_user.otp_code = None
+            current_user.otp_expiry = None
+            db.session.commit()
+            flash('✅ تم تفعيل بريدك الإلكتروني بنجاح! يمكنك الآن الشراء والبيع بأمان.', 'success')
+            return redirect(url_for('dashboard'))
+        else:
+            flash('❌ كود التحقق غير صحيح. يرجى المحاولة مرة أخرى.', 'danger')
+            return render_template('verify_email.html', user=current_user)
+            
+    return render_template('verify_email.html', user=current_user)
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
